@@ -4,21 +4,22 @@
 (function (root) {
   'use strict';
 
+  // w = co se stalo, ukazuje se u konce až po jeho nalezení
   var ENDINGS = {
-    good:    { t: 'Ve dveřích',          k: 'good'  },
-    alone:   { t: 'Druhá cesta',         k: 'bleak' },
-    up:      { t: 'Šel nahoru',          k: 'bad'   },
-    look:    { t: 'Pohled',              k: 'bad'   },
-    mirror:  { t: 'Třetiny',             k: 'bad'   },
-    sky:     { t: 'Pod širým nebem',     k: 'bad'   },
-    screen:  { t: 'Přes displej',        k: 'bad'   },
-    floor:   { t: 'Pohled dolů',         k: 'bad'   },
-    deal:    { t: 'Obchod',              k: 'bad'   },
-    proof:   { t: 'Pět minut',           k: 'bad'   },
-    stairs:  { t: 'Čekal na schodech',   k: 'bad'   },
-    fourth:  { t: 'Den je můj',          k: 'bad'   },
-    amnesia: { t: 'Prospal jsi to',      k: 'loop'  },
-    blind:   { t: 'Psáno poslepu',       k: 'loop'  }
+    good:    { t: 'Ve dveřích',        k: 'good',  w: 'Stál jsi ve 03:14 přímo v tom bodě a nedíval ses. Tvoje noční polovina se z druhé strany podívala ven, na tebe, a všichni ostatní se otočili za ní. Pohledy, ze kterých to celé bylo, začaly téct opačným směrem a rozpletlo se to.' },
+    alone:   { t: 'Druhá cesta',       k: 'bleak', w: 'Noční já dokončil svůj pohled a odešel celý. Dveře se přestaly zasekávat, smyčka skončila a ono odešlo. Lidi ale nikdo nevrátil.' },
+    up:      { t: 'Šel nahoru',        k: 'bad',   w: 'Ve dne ve čtvrtém patře žádné dveře nejsou, jen sousedovo tělo, které tě má přimět zvednout hlavu. Podíval ses, ale nebylo kudy tě vzít, tak tě to vrátilo na začátek bez paměti. Noční já začal nový blok čárek.' },
+    look:    { t: 'Pohled',            k: 'bad',   w: 'Ve 03:14 jsou dveře otevřené a ty ses podíval celý a dobrovolně. Víc nepotřebovalo. Byl jsi poslední, kdo chyběl.' },
+    mirror:  { t: 'Třetiny',           k: 'bad',   w: 'Odraz je taky pohled, jen poloviční. Roztrhl ses podruhé: další kus tebe zůstal nahoře a ve sklepě teď žijete dva na ještě kratší čas.' },
+    sky:     { t: 'Pod širým nebem',   k: 'bad',   w: 'Ta věc není nad domem, je nad tebou. Doma tě kryl strop a cizí byt nad ním, ležel jsi pod prahem ve slepém úhlu. Venku nebylo pod co zalézt.' },
+    screen:  { t: 'Přes displej',      k: 'bad',   w: 'I pohled přes displej je pohled. Nejde o to, co ukáže obrazovka, ale o to, že ses rozhodl podívat.' },
+    floor:   { t: 'Pohled dolů',       k: 'bad',   w: 'Jeho poslední lež zabrala: otevřel jsi oči. Když stojíš přímo ve dveřích, nejde uhnout pohledem, dívat se dolů je pořád dívat se dovnitř.' },
+    deal:    { t: 'Obchod',            k: 'bad',   w: 'Dodrželo slovo do písmene. Vrátilo ti člověka přesně takového, jaký byl ve 03:13, tedy vteřinu před pohledem, a ten si tu vteřinu každou noc prožije znovu. Noční já se dokoukal a je pryč.' },
+    proof:   { t: 'Pět minut',         k: 'bad',   w: 'Ke dveřím nepřišel člověk, ale jeho poslední podoba: někdo, kdo se dívá. Byla to návnada, abys šel nahoru sám a dobrovolně.' },
+    stairs:  { t: 'Čekal na schodech', k: 'bad',   w: 'Čte všechno, co čteš a na co myslíš, takže o tvé lsti vědělo celý den. Zastavilo tě o dvanáct schodů níž, než je bod. Tam tě noční já z druhé strany vidět nemohl.' },
+    fourth:  { t: 'Den je můj',        k: 'bad',   w: 'Čekal jsi moc dlouho. Noční já po víc než čtyřech stech dnech ve sklepě nevydržel a udělal to, co si tolikrát zakázal: vzal si den a tobě nechal své tři a půl hodiny.' },
+    amnesia: { t: 'Prospal jsi to',    k: 'loop',  w: 'Kdo 03:14 prospí, tomu reset vezme i paměť. Proto ti „tvůj“ hlas radil spát. Bylo to ono a chtělo začít znovu s někým, kdo mu ještě věří.' },
+    blind:   { t: 'Psáno poslepu',     k: 'loop',  w: 'Nepodíval ses, ale ani ses nerozhodl, jen jsi zapisoval. Paměť ti reset vzal. Papír psaný rukou ale přežil a v dalším pokusu ho najdeš u stolu.' }
   };
 
   function newState() {

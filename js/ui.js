@@ -74,6 +74,7 @@
         var all = engine.endings(), found = all.filter(function (e) { return e.found; }).length;
         $('endKind').textContent = KINDLABEL[v.end.k];
         $('endTitle').textContent = v.end.t;
+        $('endWhy').textContent = v.end.w; $('endWhyBox').open = false;
         $('endCount').textContent = 'Nalezené konce: ' + found + ' z ' + all.length + '. Stopy v tomhle pokusu: ' + v.end.clues + ' z ' + v.end.cluesTotal + '.';
         endBox.dataset.kind = v.end.k; endBox.hidden = false;
         $('again').textContent = v.end.k === 'good' ? 'Hrát znovu' : 'Znovu od rána';
@@ -123,6 +124,11 @@
   // ---------- obrazovky ----------
   function show(name) {
     ['title', 'game', 'gallery', 'notes'].forEach(function (n) { $(n).hidden = n !== name; });
+    // přepnutí obrazovky nesmí projít pomalým přechodem barev, jinak je text chvíli nečitelný
+    if (document.body.dataset.screen !== name) {
+      document.body.classList.add('snap');
+      setTimeout(function () { document.body.classList.remove('snap'); }, 80);
+    }
     document.body.dataset.screen = name;
     document.body.dataset.bleach = name === 'game' && current ? current.bleach : 0;
     window.scrollTo(0, 0);
@@ -143,7 +149,9 @@
     var ul = $('endList'); ul.innerHTML = '';
     engine.endings().forEach(function (e) {
       var li = document.createElement('li'); li.className = e.found ? 'found ' + e.k : 'locked';
-      li.innerHTML = '<span class="t">' + (e.found ? esc(e.t) : 'Nenalezeno') + '</span><span class="k">' + (e.found ? KINDLABEL[e.k] : '') + '</span>';
+      // nalezený konec jde rozkliknout: krátké vysvětlení, co se stalo
+      if (e.found) li.innerHTML = '<details><summary><span class="t">' + esc(e.t) + '</span><span class="k">' + KINDLABEL[e.k] + '</span></summary><p class="why">' + esc(e.w) + '</p></details>';
+      else li.innerHTML = '<span class="t">Nenalezeno</span>';
       ul.appendChild(li);
     });
   }

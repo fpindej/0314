@@ -37,6 +37,7 @@ body {
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
 button:focus-visible { outline: 2px solid var(--seg-on); outline-offset: 3px; }
 [hidden] { display: none !important; }
+body.snap, body.snap * { transition: none !important; }
 
 /* ---------- hodiny ---------- */
 .clock svg { display: block; height: 100%; width: auto; }
@@ -168,6 +169,16 @@ body[data-bleach="2"] .ln.gain, body[data-bleach="3"] .ln.gain { color: var(--in
 .end h2 { margin: .1rem 0 .4rem; font-size: 2.3rem; line-height: 1.1; font-weight: 600; }
 .end[data-kind="good"] h2 { color: var(--amber); }
 .end .count { margin: 0 0 1.5rem; color: var(--muted); }
+
+/* rozklikávací vysvětlení konce */
+summary { cursor: pointer; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary:focus-visible { outline: 2px solid var(--seg-on); outline-offset: 3px; }
+.why { margin: .6rem 0 0; font-size: 1.05rem; line-height: 1.5; max-width: 30rem; }
+.whybox { margin: .6rem 0 1rem; }
+.whybox summary { display: inline-block; border-bottom: 1px solid currentColor; padding: .2rem 0; }
+.whybox summary::after, .endlist summary .t::after { content: ' +'; color: var(--muted); }
+.whybox[open] summary::after, .endlist details[open] summary .t::after { content: ' \2212'; }
 .row { display: flex; flex-wrap: wrap; gap: .5rem 1.75rem; }
 .row button { padding: .6rem 0; border-bottom: 1px solid currentColor; }
 .row button:hover { color: var(--amber); }
@@ -175,7 +186,9 @@ body[data-bleach="2"] .ln.gain, body[data-bleach="3"] .ln.gain { color: var(--in
 /* ---------- seznam konců ---------- */
 #gallery h2 { font-size: 2.3rem; margin: 0; font-weight: 600; }
 .endlist { list-style: none; padding: 0; margin: 2rem 0; border-top: 1px solid var(--rule); }
-.endlist li { display: flex; justify-content: space-between; gap: 1rem; padding: .7rem 0; border-bottom: 1px solid var(--rule); }
+.endlist li { padding: .7rem 0; border-bottom: 1px solid var(--rule); }
+.endlist summary { display: flex; justify-content: space-between; gap: 1rem; }
+.endlist .why { color: var(--fg); margin: .5rem 0 .3rem; }
 .endlist .k { color: var(--muted); font-size: 1rem; white-space: nowrap; }
 .endlist .locked .t { color: var(--muted); font-style: italic; }
 .endlist .good .t { color: var(--amber); }

@@ -59,7 +59,7 @@
       var e = ST.ENDINGS[node.end];
       P.ends[node.end] = true; P.runs = (P.runs || 0) + 1;
       var nb = ST.notebook(s);
-      view.end = { id: node.end, t: e.t, k: e.k, clues: nb.found, cluesTotal: nb.total };
+      view.end = { id: node.end, t: e.t, k: e.k, w: e.w, clues: nb.found, cluesTotal: nb.total };
       this.store.set('save', null);
     } else {
       this.store.set('save', { id: id, s: pre });
@@ -81,7 +81,8 @@
   Engine.prototype.endings = function () {
     var P = this.P;
     return Object.keys(ST.ENDINGS).map(function (k) {
-      return { id: k, t: ST.ENDINGS[k].t, k: ST.ENDINGS[k].k, found: !!P.ends[k] };
+      var f = !!P.ends[k];
+      return { id: k, t: ST.ENDINGS[k].t, k: ST.ENDINGS[k].k, found: f, w: f ? ST.ENDINGS[k].w : '' };
     });
   };
 
