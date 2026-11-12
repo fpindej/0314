@@ -9,7 +9,7 @@
   var engine = new Engine(store);
   var $ = function (id) { return document.getElementById(id); };
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var revealTimers = [];
+  var revealTimers = [], current = null, finishReveal = null;
 
   // ---------- sedmisegmentové hodiny ----------
   var SEG = { 0: 'abcdef', 1: 'bc', 2: 'abged', 3: 'abgcd', 4: 'fgbc', 5: 'afgcd', 6: 'afgedc', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg' };
@@ -33,7 +33,7 @@
   // ---------- text ----------
   function esc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function inline(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>'); }
-  var KIND = { '> ': 'sms', '~ ': 'note', '# ': 'carve', '! ': 'voice', '= ': 'stamp' };
+  var KIND = { '> ': 'sms', '~ ': 'note', '# ': 'carve', '! ': 'voice', '= ': 'stamp', '+ ': 'diary' };
   function lineEl(l) {
     var kind = KIND[l.slice(0, 2)], body = kind ? l.slice(2) : l, el = document.createElement(kind === 'stamp' ? 'h3' : 'p');
     el.className = 'ln ' + (kind || 'prose');
@@ -42,10 +42,16 @@
     else el.innerHTML = inline(body);
     return el;
   }
+  function gainEl(text) {
+    var el = document.createElement('p'); el.className = 'ln gain';
+    el.innerHTML = '<span class="tag">Nová stopa</span>' + inline(text);
+    return el;
+  }
 
   var KINDLABEL = { good: 'Dobrý konec', bleak: 'Hořký konec', bad: 'Špatný konec', loop: 'Zpátky na začátek' };
 
   function render(v) {
+    current = v;
     revealTimers.forEach(clearTimeout); revealTimers = [];
     document.body.dataset.bleach = v.bleach;
     document.body.dataset.mood = v.mood;
@@ -55,44 +61,53 @@
     Sound.mood(v.mood);
     if (v.sfx) Sound.sfx(v.sfx);
 
-    var story = $('story'), list = $('choices'), endBox = $('end');
-    story.innerHTML = ''; list.innerHTML = ''; endBox.hidden = true;
+    var story = $('story'), list = $('choices'), endBox = $('end'), skip = $('skip');
+    story.innerHTML = ''; list.innerHTML = ''; endBox.hidden = true; skip.hidden = true;
     var els = v.lines.map(lineEl);
+    (v.newClues || []).forEach(function (c) { els.push(gainEl(c)); });
+    if (v.newClues && v.newClues.length) $('notesBtn').classList.add('fresh');
     els.forEach(function (el) { story.appendChild(el); });
 
     function showChoices() {
+      skip.hidden = true;
       if (v.end) {
-        var found = engine.endings().filter(function (e) { return e.found; }).length;
+        var all = engine.endings(), found = all.filter(function (e) { return e.found; }).length;
         $('endKind').textContent = KINDLABEL[v.end.k];
         $('endTitle').textContent = v.end.t;
-        $('endCount').textContent = 'Nalezené konce: ' + found + ' z ' + engine.endings().length;
+        $('endCount').textContent = 'Nalezené konce: ' + found + ' z ' + all.length + '. Stopy v tomhle pokusu: ' + v.end.clues + ' z ' + v.end.cluesTotal + '.';
         endBox.dataset.kind = v.end.k; endBox.hidden = false;
         $('again').textContent = v.end.k === 'good' ? 'Hrát znovu' : 'Znovu od rána';
         return;
       }
+      var solo = v.choices.length === 1;
+      list.classList.toggle('solo', solo);
       v.choices.forEach(function (t, i) {
         var li = document.createElement('li'), b = document.createElement('button');
         b.type = 'button';
-        b.innerHTML = '<span class="key">' + String.fromCharCode(65 + i) + '</span><span class="lbl">' + inline(t) + '</span>';
-        b.addEventListener('click', function () { choose(i); });
+        // jediná možnost není volba, takže nedostane písmeno
+        b.innerHTML = (solo ? '' : '<span class="key">' + String.fromCharCode(65 + i) + '</span>') + '<span class="lbl">' + inline(t) + '</span>';
+        b.addEventListener('click', function (e) { e.stopPropagation(); choose(i); });
         li.appendChild(b); list.appendChild(li);
       });
       list.classList.remove('pending');
     }
 
     list.classList.add('pending');
+    finishReveal = null;
     if (reduce) { els.forEach(function (el) { el.classList.add('in'); }); showChoices(); }
     else {
       var step = v.bleach >= 2 ? 620 : 420, done = false;
-      var finish = function () {
-        if (done) return; done = true;
+      finishReveal = function (byUser) {
+        if (done) return; done = true; finishReveal = null;
         revealTimers.forEach(clearTimeout);
         els.forEach(function (el) { el.classList.add('in'); });
-        showChoices(); story.removeEventListener('click', finish);
+        if (byUser) store.set('skipped', true);
+        showChoices();
       };
       els.forEach(function (el, i) { revealTimers.push(setTimeout(function () { el.classList.add('in'); }, 120 + i * step)); });
-      revealTimers.push(setTimeout(finish, 120 + els.length * step));
-      story.addEventListener('click', finish);
+      revealTimers.push(setTimeout(function () { if (finishReveal) finishReveal(false); }, 120 + els.length * step));
+      // nápověda se ukazuje jen do doby, než hráč přeskočení poprvé použije
+      if (!store.get('skipped') && els.length > 3) revealTimers.push(setTimeout(function () { if (finishReveal) skip.hidden = false; }, 1400));
     }
     window.scrollTo(0, 0);
   }
@@ -107,9 +122,9 @@
 
   // ---------- obrazovky ----------
   function show(name) {
-    ['title', 'game', 'gallery'].forEach(function (n) { $(n).hidden = n !== name; });
+    ['title', 'game', 'gallery', 'notes'].forEach(function (n) { $(n).hidden = n !== name; });
     document.body.dataset.screen = name;
-    if (name !== 'game') { document.body.dataset.bleach = 0; }
+    document.body.dataset.bleach = name === 'game' && current ? current.bleach : 0;
     window.scrollTo(0, 0);
   }
 
@@ -133,16 +148,38 @@
     });
   }
 
-  function soundLabel() { var t = Sound.isOn() ? 'Zvuk: zapnutý' : 'Zvuk: vypnutý'; $('soundTitle').textContent = t; $('soundGame').textContent = Sound.isOn() ? 'Zvuk' : 'Ticho'; $('soundGame').setAttribute('aria-pressed', Sound.isOn()); }
+  function notes() {
+    var nb = engine.notebook(); if (!nb) return;
+    $('notesBtn').classList.remove('fresh');
+    $('notesCount').textContent = nb.found ? 'Stopy: ' + nb.found + ' z ' + nb.total + '. Co zatím víš a co ti ještě chybí.' : 'Zatím nevíš nic. Rozhlížej se, čti, ptej se.';
+    var box = $('notesList'); box.innerHTML = '';
+    nb.groups.forEach(function (g) {
+      var sec = document.createElement('section'), h = document.createElement('h3');
+      h.textContent = g.title; sec.appendChild(h);
+      g.items.forEach(function (t) { var p = document.createElement('p'); p.className = 'clue'; p.textContent = t; sec.appendChild(p); });
+      if (g.missing) {
+        var m = document.createElement('p'); m.className = 'missing';
+        m.textContent = g.items.length ? (g.missing === 1 ? 'Jedna stopa ještě chybí.' : 'Chybí ještě ' + g.missing + (g.missing < 5 ? ' stopy.' : ' stop.')) : 'Zatím nic.';
+        sec.appendChild(m);
+      }
+      box.appendChild(sec);
+    });
+    show('notes');
+  }
+
+  function soundLabel() { $('soundTitle').textContent = Sound.isOn() ? 'Zvuk: zapnutý' : 'Zvuk: vypnutý'; $('soundGame').textContent = Sound.isOn() ? 'Zvuk' : 'Ticho'; $('soundGame').setAttribute('aria-pressed', Sound.isOn()); }
+  function begin(view) { Sound.start(); $('notesBtn').classList.remove('fresh'); current = null; show('game'); try { render(view()); show('game'); } catch (e) { fail(e); } }
 
   document.addEventListener('DOMContentLoaded', function () {
     if (store.get('mute')) Sound.set(false);
     soundLabel(); title();
-    $('new').addEventListener('click', function () { Sound.start(); show('game'); try { render(engine.newGame()); } catch (e) { fail(e); } });
-    $('continue').addEventListener('click', function () { Sound.start(); show('game'); try { render(engine.resume()); } catch (e) { fail(e); } });
-    $('again').addEventListener('click', function () { Sound.start(); try { render(engine.newGame()); } catch (e) { fail(e); } });
+    $('new').addEventListener('click', function () { begin(function () { return engine.newGame(); }); });
+    $('continue').addEventListener('click', function () { begin(function () { return engine.resume(); }); });
+    $('again').addEventListener('click', function () { begin(function () { return engine.newGame(); }); });
     $('toTitle').addEventListener('click', title);
-    $('home').addEventListener('click', title);
+    $('notesBtn').addEventListener('click', notes);
+    $('notesBack').addEventListener('click', function () { show('game'); });
+    $('notesHome').addEventListener('click', title);
     $('openGallery').addEventListener('click', function () { Sound.start(); gallery(); });
     $('endGallery').addEventListener('click', gallery);
     $('closeGallery').addEventListener('click', title);
@@ -153,12 +190,18 @@
     function tog() { Sound.start(); store.set('mute', Sound.toggle() ? null : true); soundLabel(); }
     $('soundTitle').addEventListener('click', tog);
     $('soundGame').addEventListener('click', tog);
+    // klepnutí kamkoliv do stránky odkryje zbytek textu
+    $('page').addEventListener('click', function () { if (finishReveal) finishReveal(true); });
     document.addEventListener('keydown', function (e) {
-      if ($('game').hidden) return;
-      var k = e.key.toUpperCase(), idx = k.length === 1 ? k.charCodeAt(0) - 65 : -1;
+      if ($('game').hidden || e.metaKey || e.ctrlKey || e.altKey) return;
       var btns = $('choices').querySelectorAll('button');
-      if (!$('choices').classList.contains('pending') && idx >= 0 && idx < btns.length) btns[idx].click();
-      else if (e.key === ' ' || e.key === 'Enter') { if ($('choices').classList.contains('pending')) { e.preventDefault(); $('story').click(); } }
+      if (e.key === ' ' || e.key === 'Enter') {
+        if (finishReveal) { e.preventDefault(); finishReveal(true); }
+        else if (btns.length === 1 && document.activeElement.tagName !== 'BUTTON') { e.preventDefault(); btns[0].click(); }
+        return;
+      }
+      var k = e.key.toUpperCase(), idx = k.length === 1 ? k.charCodeAt(0) - 65 : -1;
+      if (!finishReveal && idx >= 0 && idx < btns.length) btns[idx].click();
     });
   });
 })();

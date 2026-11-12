@@ -31,7 +31,8 @@
       knowsSelf: false, metNight: false, knowsWays: false, heardTease: false,
       knowsFourth: false, verified: false, offerDay: null, offerGone: false,
       offerCarved: false, fortyTwo: false, lied: false, away: false, wasAway: false,
-      noteSeen: false, sawHand: false, shaken: false
+      noteSeen: false, sawHand: false, shaken: false,
+      hasDog: false, animals: false, waited: false, sawLock: false, knowsLamp: false, lostTime: false, hubSeen: false
     };
   }
 
@@ -44,7 +45,6 @@
     if (s.day === s.offerDay + 1) return 'reduced';
     return 'bare';
   }
-  function back(s) { return s.day === 1 ? 'd1hub' : 'hub'; }
   function act(key) { return function (s) { s.actions++; s.done[key] = true; }; }
   function hasCarv(P) { var c = P.carv || {}; return !!(c.point || c.bed || c.night || c.blind); }
 
@@ -145,6 +145,7 @@
 
   N.door = {
     time: ['Den 1', '06:58'], mood: 'dread',
+    enter: function (s) { s.sawLock = true; },
     text: [
       'Zámek není poškozenej. Klíč trčí zevnitř. Někdo odemkl z bytu, ne z chodby.',
       'Procházíš pokoje. Nic nechybí. Peněženka, notebook, klíče od auta, všechno na místě.',
@@ -171,7 +172,7 @@
       return t;
     },
     choices: [
-      { t: 'Dál.', to: function (s) { return s.noteSeen ? 'd1hub' : 'water'; }, do: function (s) { if (s.noteSeen) act('block')(s); else s.done.block = true; } }
+      { t: 'Dál.', to: function (s) { return s.noteSeen ? 'p_home' : 'water'; }, do: function (s) { if (s.noteSeen) act('block')(s); else s.done.block = true; } }
     ]
   };
 
@@ -337,7 +338,7 @@
   };
   N.wait = {
     time: ['Den 1', '10:40'], mood: 'dread',
-    enter: function (s) { s.noteSeen = true; },
+    enter: function (s) { s.noteSeen = true; s.waited = true; },
     text: function () {
       return [
         'Hodina. Dvě. Nohy ti dřevění. Ale něco ses dozvěděl: ať je to cokoliv, dovnitř to samo nejde. Řetízek by to nezastavil. Buď nemůže, nebo nechce.',
@@ -354,7 +355,7 @@
       { t: 'Nevěřit ničemu. Sbalit se a zmizet z baráku.', to: 'city' },
       { t: 'Porovnat to písmo. A zjistit, jestli ten papír není z tvýho bloku.', to: 'block', if: function (s) { return !s.done.block; } },
       { t: 'Jít nahoru. Když ti dvě různý věci říkaj opak, chceš vidět, kterou to nasere.', to: 'end_up' },
-      { t: 'Zůstat doma a rozmyslet si to.', to: 'd1hub' }
+      { t: 'Zůstat doma a rozmyslet si to.', to: 'hub' }
     ];
   }
 
@@ -370,47 +371,12 @@
     ],
     choices: [
       { t: 'Nechat se vést.', to: 'end_up' },
-      { t: 'Vytrhnout se a letět zpátky do bytu.', to: 'd1hub', do: function (s) { s.actions++; } }
-    ]
-  };
-
-  // ---------- den 1: zbytek dne ----------
-  var D1CLOCK = ['11:10', '12:40', '14:10', '15:30'];
-  N.d1hub = {
-    time: function (s) { return ['Den 1', D1CLOCK[Math.min(s.actions, 3)]]; }, mood: 'dread',
-    redirect: function (s) { return s.actions >= 3 ? 'evening' : null; },
-    text: function (s) {
-      var t = [];
-      if (s.actions === 0) {
-        t.push('Zamčeno, řetízek. Na stole leží lístek s tvým písmem.');
-        if (s.sawHand) t.push('Lístek ti pod dveře strčil soused ze čtvrtýho. Rukou. Tvým písmem. Hlavou ke stropu.');
-      } else if (s.actions === 1) {
-        t.push('Je po poledni. V listopadu se stmívá po čtvrtý.');
-        t.push('Shora se ozve hlas, tlumeně přes strop:');
-        t.push('! „Haló, sousede? Jste tam dole? Prosím vás, pojďte mi pomoct. Já nevím, co se děje.“');
-        t.push('Zní to přesně jako on.');
-      } else {
-        t.push('Venku se začíná šeřit. Hlas nahoře volal ještě dvakrát. Potřetí už neprosil. Jen řekl klidně: „Dobře. Mám čas.“');
-      }
-      t.push('Co teď?');
-      return t;
-    },
-    choices: [
-      { t: 'Porovnat písmo a prohlídnout blok na stole.', to: 'block', if: function (s) { return !s.done.block; } },
-      { t: 'Prohledat byt. Jestli jsi tu nebyl poprvý, mohl sis nechat vzkazy.', to: 'search', do: act('search'), if: function (s) { return s.knowsLoop && !s.done.search; } },
-      { t: 'Vyrýt nožem do omítky za zrcadlo, co víš. Pro příště.', to: 'carve1', do: act('carve1'), if: function (s) { return s.knowsLoop && !s.done.carve1; } },
-      { t: 'Doškrábat zbytek zatřený omítky za zrcadlem.', to: 'scrape', do: act('scrape'), if: function (s) { return s.done.carve1 && !s.done.scrape; } },
-      { t: 'Sejít do sklepa. Kóje 7.', to: 'cellar', do: act('cellar'), if: function (s) { return !s.done.cellar; } },
-      { t: 'Odpovědět sousedovi přes strop. Zeptat se na něco, co ví jen on.', to: 'testNeighbor', do: act('test'), if: function (s) { return s.actions >= 1 && !s.done.test; } },
-      { t: 'Zapnout telefon zpátky.', to: 'phoneOn', do: act('phoneOn'), if: function (s) { return s.phoneOff; } },
-      { t: 'Pryč z baráku, dokud je světlo.', to: 'city' },
-      { t: 'Jít nahoru za tím hlasem.', to: 'end_up' },
-      { t: 'Opevnit se v bytě a počkat na noc.', to: 'evening' }
+      { t: 'Vytrhnout se a letět zpátky do bytu.', to: 'hub', do: function (s) { s.actions++; } }
     ]
   };
 
   N.search = {
-    time: function (s) { return ['Den ' + s.day, s.day === 1 ? '12:34' : '10:10']; }, mood: 'dread',
+    time: function (s) { return ['Den ' + s.day, s.day === 1 ? '12:34' : '09:10']; }, mood: 'dread',
     enter: function (s) { s.found = true; },
     text: function (s, P) {
       return [
@@ -426,7 +392,7 @@
         s.noteSeen ? 'Na vzkazu zpod dveří čárku má. Takže jeden z těch dvou je podvrh.' : 'Proč bys najednou psal sedmičku jinak?'
       ];
     },
-    choices: [{ t: 'Dál.', to: back }]
+    choices: [{ t: 'Dál.', to: 'p_home' }]
   };
 
   N.carve1 = {
@@ -442,11 +408,12 @@
         'A ještě jedna věc se ti nelíbí: kdo to zatřel? Ty bys vlastní vzkaz nepřemalovával.'
       ];
     },
-    choices: [{ t: 'Dál.', to: 'd1hub' }]
+    choices: [{ t: 'Dál.', to: 'p_home' }]
   };
 
   N.scrape = {
-    time: ['Den 1', '14:40'], mood: 'dread', sfx: 'scrape',
+    time: function (s) { return ['Den ' + s.day, s.day === 1 ? '14:40' : '11:10']; }, mood: 'dread', sfx: 'scrape',
+    enter: function (s) { s.sawLock = true; },
     text: [
       'Škrábeš dál, celou plochu pod zrcadlem. Barva jde dolů v plátech. Pod ní vrstvy rýh přes sebe, některý zatřený několikrát.',
       '# VE 03:14 NESPI. POD POSTEL, OBLIČEJ DO ZEMĚ.',
@@ -454,11 +421,11 @@
       '# NEVÍM, KDO ZATÍRÁ. DVEŘE JSOU RÁNO ODEMČENÝ ZEVNITŘ.',
       'To poslední je vyrytý tak hluboko, že nůž projel až na cihlu.'
     ],
-    choices: [{ t: 'Dál.', to: 'd1hub' }]
+    choices: [{ t: 'Dál.', to: 'p_home' }]
   };
 
   N.testNeighbor = {
-    time: ['Den 1', '12:50'], mood: 'dread',
+    time: function (s) { return ['Den ' + s.day, '12:50']; }, mood: 'dread',
     text: [
       'Zakřičíš ke stropu: „Jak se jmenoval váš pes?“',
       '! „Bárt. Umřel předloni v březnu, vždyť jste mi ho pomáhal nést do auta.“',
@@ -467,18 +434,18 @@
       '! „Sedmnáct. Bylo ti sedmnáct. A nikomu jsi to neřekl.“',
       'Soused by tohle vědět nemohl. Tohle víš jen ty.'
     ],
-    choices: [{ t: 'Přestat mluvit. Přestat myslet nahlas.', to: 'd1hub' }]
+    choices: [{ t: 'Přestat mluvit. Přestat myslet nahlas.', to: 'p_home' }]
   };
 
   N.phoneOn = {
     time: ['Den 1', '13:00'], mood: 'dread', sfx: 'buzz',
-    enter: function (s) { s.phoneOff = false; },
+    enter: function (s) { s.phoneOff = false; s.lostTime = true; },
     text: [
       'SIM zpátky, zapnout. Signál pořád plnej. Jedna nová zpráva.',
       '> Vítej zpátky. Nezlobím se.',
       'Pustíš si kamery, co ještě běžej. Na posledním snímku před 03:14 se všichni na světě dívaj stejným směrem. Na to, abys spočítal kam, už ti dneska nezbyde čas.'
     ],
-    choices: [{ t: 'Dál.', to: 'd1hub' }]
+    choices: [{ t: 'Dál.', to: 'p_pc' }]
   };
 
   // ---------- sklep ve dne ----------
@@ -509,16 +476,18 @@
       }
       return t;
     },
-    choices: [{ t: 'Zpátky nahoru do bytu.', to: back }]
+    choices: [{ t: 'Zpátky na schody.', to: 'p_house' }]
   };
 
   // ---------- město / útěk ----------
   N.city = {
     time: function (s) { return ['Den ' + s.day, '13:00']; }, mood: 'day',
+    enter: function (s) { s.animals = true; },
     text: function (s) {
       var t = [
         'Auto na křižovatce má klíček v zapalování. Projíždíš město krokem. Semafory přepínaj pro nikoho. Před pekárnou stojí fronta kabelek a tašek na zemi.',
         'Ve výlohách elektra svítí všechny televize. Na každý to samý: 03:14.',
+        'Před řeznictvím sedí v řadě šest psů a čekaj. Ve 13:20 uvnitř něco cvakne, dveře chladicího boxu povolej a psi vejdou jeden za druhým. Bez rvačky. Jako by to dělali každej den.',
         'Jedeš dál, ven z města. Pole, dálnice plná stojících aut s otevřenejma dveřma. Nikde nikdo. Sto kilometrů a pořád nic.'
       ];
       if (s.day > 1) t.push('Telefon na sedadle spolujezdce zavibruje. Nečteš to.');
@@ -559,6 +528,8 @@
         if (s.lied) t.push('> Dnes v noci tedy. Těším se.');
         if (s.knowsWays) t.push('Víš, kde máš stát ve 03:10, kdyby ses rozhodl.');
       }
+      if (s.done.diary) t.push('Ty hvězdy navíc. Teď víš, co jsou zač. Každá z nich je něčí čtvrtý patro.');
+      if (s.hasDog && !s.away) t.push('Kulich zalezl pod postel už za šera. Leží tam s čumákem mezi tlapama a nejde vytáhnout.');
       t.push('Do 03:14 zbejvá pár hodin.');
       return t;
     },
@@ -574,7 +545,7 @@
   N.n0314 = {
     time: function (s) { return ['Den ' + s.day, '03:13']; }, mood: 'event', bleach: 1,
     text: function (s) {
-      return [
+      var t = [
         'Zkoušíš neusnout. Jde to samo.',
         '= 03:09',
         s.away ? 'V pokoji nad tebou začnou kroky. V penzionu, kde nikdo není. Pomalu, od okna ke dveřím, pořád dokola.' : 'Nahoře u souseda začnou kroky. Pomalu, od okna ke dveřím, pořád dokola.',
@@ -585,6 +556,8 @@
         'Strop nad tebou tiše praská. Jako by už nebyl úplně pevnej.',
         'Brada se ti zvedá sama. Máš vteřiny.'
       ];
+      if (s.hasDog && !s.away) t.splice(t.length - 1, 0, 'Pod postelí se ozve tichý zakňučení. Kulich tam leží celou dobu. Oči má zavřený.');
+      return t;
     },
     choices: [
       { t: 'Na břicho pod postel, obličej do podlahy, oči zavřený, ruce přes hlavu.', to: 'survive1' },
@@ -633,6 +606,7 @@
       t.push('Kroky nahoře přestanou. Hodinky se zastaví.');
       t.push('= 03:13');
       t.push('Světlo shora, bledý, bez stínů. Ten cizí klid. Strop tiše praská. Brada se ti zvedá sama.');
+      if (s.hasDog && !s.away) t.push('Kulich je pod postelí už od večera.');
       if (s.nights >= 1) t.push('Jde to o chlup líp, když víš, co čekat. Ale jen o chlup.');
       return t;
     },
@@ -660,7 +634,7 @@
   // přechod noc -> ráno
   N.after = {
     enter: function (s) {
-      s.nights++; s.day++; s.actions = 0; s.today = {};
+      s.nights++; s.day++; s.actions = 0; s.today = {}; s.phoneOff = false; s.lostTime = false;
       if (s.away) { s.wasAway = true; s.away = false; }
       if (s.metNight) s.erosion++;
       if (s.trapSet) { s.trapSet = false; s.trapResult = true; s.knowsSelf = true; }
@@ -688,6 +662,7 @@
         t.push('Ale ty si pamatuješ všechno. Tolik pokusů se resetovalo i s hlavou. Tenhle ne.');
         t.push('> Pamatuješ si. To se nemělo stát. Promluvíme si?');
         t.push('A nahoře teče voda. O šestnáct minut dřív než včera.');
+        if (s.hasDog) t.push('O dvě minuty pozdějc něco škrábe na dveře. Kulich. Reset ho vrátil na ulici a on si cestu pamatuje.');
         return t;
       }
       t.push('Lednička. Káva. Postel. Dveře odemčený.');
@@ -713,82 +688,296 @@
       if (o === 'bare' && !s.bareTold) { t.push('> Už jen ten svět. Nikoho ti nevrátím. Rozmysli si, kolik ještě chceš prohrát čekáním.'); s.bareTold = true; }
       if (s.erosion === 3) t.push('Ruce tě po ránu bolej víc než jindy. Jako bys celou noc do něčeho ryl. A tlačil čím dál míň.');
       if (s.erosion === 4) t.push('Na zrcadle v koupelně je prstem do páry napsáno: UŽ DLOUHO NE. Tvým písmem.');
+      if (s.hasDog) t.push('V 06:49 škrábe na dveře Kulich. Jako každý ráno.');
       t.push('Nahoře teče voda.');
       return t;
     },
     choices: [{ t: 'Vstát.', to: 'hub' }]
   };
 
-  var HUBCLOCK = ['07:00', '11:30', '15:40'];
+  // =====================================================================
+  //  ROZCESTNÍK: přesuny mezi místy jsou zadarmo, každá pořádná věc stojí kus dne
+  // =====================================================================
+  var CLOCK1 = ['11:10', '12:40', '14:10'], CLOCKN = ['07:00', '10:30', '14:00'], BUDGET = 3;
+  function hubTime(s) { var c = s.day === 1 ? CLOCK1 : CLOCKN; return ['Den ' + s.day, c[Math.min(s.actions, 2)]]; }
+  function dusk(s) { return s.actions >= BUDGET ? 'evening' : null; }
+  function left(s) {
+    var n = BUDGET - s.actions;
+    return n === 1 ? 'Stihneš ještě jednu věc, než se setmí.' : 'Než se setmí, stihneš ještě ' + (n === 3 ? 'tři' : 'dvě') + ' věci.';
+  }
+  function dayMood(s) { return s.day === 1 ? 'dread' : 'day'; }
+  function online(s) { return !s.phoneOff; }
+
   N.hub = {
-    time: function (s) { return ['Den ' + s.day, HUBCLOCK[Math.min(s.actions, 2)]]; }, mood: 'day',
-    redirect: function (s) { return s.actions >= 2 ? 'evening' : null; },
+    time: hubTime, mood: dayMood, redirect: dusk,
     text: function (s) {
       var t = [];
-      if (s.actions === 0) t.push('Máš zpátky celej den, proud a internet. A víš, co přijde v noci.');
-      else t.push('Je skoro poledne. Soused za chvíli začne volat o pomoc, na minutu přesně.');
-      if (s.shaken) t.push('Pořád slyšíš ten hlas za dveřma.');
-      t.push('Stihneš ' + (s.actions === 0 ? 'dvě věci' : 'ještě jednu věc') + ', než se setmí.');
+      if (s.day === 1) {
+        if (s.actions === 0) {
+          t.push('Zamčeno, řetízek. Na stole leží lístek s tvým písmem.');
+          if (s.sawHand) t.push('Pod dveře ti ho strčil soused ze čtvrtýho. Tvým písmem. Hlavou ke stropu.');
+        } else if (s.actions === 1) {
+          t.push('Je po poledni. V listopadu se stmívá po čtvrtý.');
+          t.push('Shora se ozve hlas, tlumeně přes strop:');
+          t.push('! „Haló, sousede? Jste tam dole? Prosím vás, pojďte mi pomoct. Já nevím, co se děje.“');
+          t.push('Zní to přesně jako on.');
+        } else {
+          t.push('Venku se začíná šeřit. Hlas nahoře volal ještě dvakrát. Potřetí už neprosil. Jen řekl klidně: „Dobře. Mám čas.“');
+        }
+      } else {
+        if (s.actions === 0) t.push('Máš zpátky celej den, proud a internet. A víš, co přijde v noci.');
+        else if (s.actions === 1) t.push('Dopoledne je pryč. Ve 12:34 začne soused volat o pomoc, na minutu přesně.');
+        else t.push('Odpoledne. Stíny se dloužej a hlas nahoře už neprosí. Čeká.');
+        if (s.shaken) t.push('Pořád slyšíš ten hlas za dveřma.');
+      }
+      if (!s.hubSeen) { t.push('Rozhlížet se můžeš, jak dlouho chceš. Každá pořádná věc ti ale vezme kus dne.'); s.hubSeen = true; }
+      t.push(left(s));
       return t;
     },
     choices: [
-      { t: 'Napsat číslu 0314.', to: 'chat', if: function (s) { return !s.today.chat; } },
-      { t: 'Stáhnout záznamy z kamer a spočítat, kam se všichni dívali.', to: 'triang', do: act('triang'), if: function (s) { return !s.done.triang; } },
-      { t: 'Prohledat byt. Vzkazy od minulejch pokusů.', to: 'search', do: act('search'), if: function (s) { return !s.done.search; } },
-      { t: 'Zeď za zrcadlem. Vyrýt, co víš.', to: 'mirrorwall', do: act('mirrorwall'), if: function (s) { return !s.done.mirrorwall; } },
-      { t: 'Vyrýt to nejdůležitější zespodu do desky stolu. Tam se nikdo nedívá.', to: 'carveDesk', do: function (s) { s.actions++; s.today.desk = true; }, if: function (s) { return s.done.mirrorwall && !s.today.desk; } },
-      { t: 'Zjistit, kdo ti každou noc odemyká dveře.', to: 'doorCheck', do: act('doorCheck'), if: function (s) { return !s.done.doorCheck && !s.knowsSelf; } },
-      { t: 'Nastražit past na noční návštěvu.', to: 'trap', do: act('trap'), if: function (s) { return !s.done.trap && !s.knowsSelf && (s.done.doorCheck || s.sawWetPaint); } },
-      { t: 'Sejít do sklepa. Kóje 7.', to: 'cellar', do: function (s) { s.actions++; s.done.cellar = true; if (s.metNight) s.done.cellar2 = true; }, if: function (s) { return s.metNight ? !s.done.cellar2 : !s.done.cellar; } },
-      { t: 'Podívat se na čtvrtý patro zvenku, z ulice.', to: 'outside', do: act('outside'), if: function (s) { return !s.done.outside; } },
-      { t: 'Vyrýt ve sklepě nabídku pro toho nočního. Ať se vyjádří.', to: 'carveOffer', do: act('carveOffer'), if: function (s) { return s.metNight && offer(s) !== 'none' && !s.done.carveOffer; } },
-      { t: 'Chtít po 0314 důkaz: ať ti toho jednoho vrátí na pět minut.', to: 'proofAsk', if: function (s) { var o = offer(s); return o === 'full' || o === 'reduced'; } },
-      { t: 'Vzít nabídku. Vyrýt nočnímu, ať se dokouká.', to: 'end_deal', if: function (s) { var o = offer(s); return o === 'full' || o === 'reduced'; } },
-      { t: 'Napsat 0314, že nabídku bereš. A v noci jít třetí cestou.', to: 'lie', do: act('lie'), if: function (s) { return offer(s) !== 'none' && s.knowsWays && !s.lied; } },
-      { t: 'Druhá cesta. Vyrýt nočnímu, ať se dokouká a odejde celej.', to: 'end_alone', if: function (s) { var o = offer(s); return s.knowsWays && (o === 'none' || o === 'bare'); } },
-      { t: 'Sednout do auta a zkusit ujet. Zjistit, jestli tě to najde i jinde.', to: 'city' },
-      { t: 'Jít nahoru do čtvrtýho patra. Teď, za světla.', to: 'end_up' },
-      { t: 'Nedělat nic a počkat na večer.', to: 'evening' }
+      { t: 'Byt. Zdi, skříně, zrcadlo, okno.', to: 'p_home' },
+      { t: 'Telefon a notebook.', to: 'p_pc' },
+      { t: 'Barák. Schránky, sousedi, sklep.', to: 'p_house' },
+      { t: 'Ven na ulici.', to: 'p_street' },
+      { t: 'Opevnit se v bytě a počkat na noc.', to: 'evening', if: function (s) { return s.day === 1; } },
+      { t: 'Nedělat už nic a počkat na večer.', to: 'evening', if: function (s) { return s.day > 1; } }
     ]
   };
 
-  // ---------- 0314 ----------
-  N.chat = {
-    time: function (s) { return ['Den ' + s.day, HUBCLOCK[Math.min(s.actions, 2)]]; }, mood: 'dread',
-    text: ['Kurzor bliká v prázdným poli. Číslo 0314 je online. Je online pořád.', 'Na co se zeptáš?'],
+  // ---------- byt ----------
+  N.p_home = {
+    time: hubTime, mood: dayMood, redirect: dusk,
+    text: function (s) {
+      var t = [];
+      if (s.day === 1) t.push('Tvůj byt. Všechno je na svým místě a nic není v pořádku. Káva na lince dávno vystydla.');
+      else t.push(s.actions === 0 ? 'Tvůj byt. Z kávy na lince se kouří, jako každý ráno. Už ji ani nevyléváš.' : 'Tvůj byt. Káva na lince mezitím vystydla. Zejtra bude zase teplá.');
+      if (s.hasDog) t.push('Kulich leží na prahu ložnice a nespouští z tebe oči.');
+      t.push(left(s));
+      return t;
+    },
     choices: [
-      { t: '„Kde jsou všichni?“', to: 'chat_where', if: function (s) { return !s.q.where; } },
-      { t: '„Proč zrovna tady? Proč nad mojí postelí?“', to: 'chat_why', if: function (s) { return s.knowsPoint && !s.q.why; } },
-      { t: '„Kdo mi v noci leze do bytu?“', to: 'chat_who', if: function (s) { return (s.sawWetPaint || s.done.doorCheck) && !s.knowsSelf && !s.q.who; } },
-      { t: '„Jaká čtvrtá cesta?“', to: 'chat_fourth', if: function (s) { return s.heardTease && !s.q.fourth; } },
-      { t: '„A co jsi ty? Co z toho máš, když mi radíš?“', to: 'chat_what', if: function (s) { return s.metNight && s.offerDay === null; } },
-      { t: 'Nic. Položit telefon displejem dolů.', to: 'hub' }
+      { t: 'Porovnat písmo z lístku a prohlídnout blok na stole.', to: 'block', if: function (s) { return s.day === 1 && !s.done.block; } },
+      { t: 'Prohledat byt. Jestli jsi tu nebyl poprvý, mohl sis nechat vzkazy.', to: 'search', do: act('search'), if: function (s) { return (s.knowsLoop || s.day > 1) && !s.done.search; } },
+      { t: 'Vyrýt nožem do omítky za zrcadlo, co víš. Pro příště.', to: 'carve1', do: act('carve1'), if: function (s) { return s.day === 1 && s.knowsLoop && !s.done.carve1; } },
+      { t: 'Zeď za zrcadlem. Vyrýt, co víš.', to: 'mirrorwall', do: act('mirrorwall'), if: function (s) { return s.day > 1 && !s.done.mirrorwall; } },
+      { t: 'Doškrábat zbytek zatřený omítky za zrcadlem.', to: 'scrape', do: act('scrape'), if: function (s) { return (s.done.carve1 || s.done.mirrorwall) && !s.done.scrape; } },
+      { t: 'Vyrýt to nejdůležitější zespodu do desky stolu. Tam se nikdo nedívá.', to: 'carveDesk', do: function (s) { s.actions++; s.today.desk = true; }, if: function (s) { return s.done.mirrorwall && !s.today.desk; } },
+      { t: 'Zjistit, kdo ti každou noc odemyká dveře.', to: 'doorCheck', do: act('doorCheck'), if: function (s) { return s.day > 1 && !s.done.doorCheck && !s.knowsSelf; } },
+      { t: 'Nastražit past na noční návštěvu.', to: 'trap', do: act('trap'), if: function (s) { return s.day > 1 && !s.done.trap && !s.knowsSelf && (s.done.doorCheck || s.sawWetPaint); } },
+      { t: 'Odpovědět sousedovi přes strop. Zeptat se na něco, co ví jen on.', to: 'testNeighbor', do: act('test'), if: function (s) { return s.actions >= 1 && !s.done.test; } },
+      { t: 'Podívat se z okna.', to: 'window' },
+      { t: 'Jinam.', to: 'hub' }
     ]
   };
-  function chatDo(key) { return function (s) { s.q[key] = true; s.today.chat = true; s.actions++; }; }
+
+  N.window = {
+    time: hubTime, mood: dayMood,
+    text: function (s) {
+      var t = ['Ulice pod tebou. Auto uprostřed křižovatky, dveře řidiče dokořán, motor pořád běží.'];
+      if (!s.hasDog) t.push('Na chodníku leží vodítko. A kousek od něj, u vašeho vchodu, sedí pes. Střapatej voříšek. Nedívá se na ulici. Dívá se nahoru, přímo do tvýho okna. Když se pohneš, zavrtí ocasem.');
+      t.push('Holubi sedí na všech střechách v ulici. Na tý vaší ani jeden.');
+      if (s.nights >= 1) t.push('Přes křižovatku přeběhne liška. Včera přeběhla ve stejnou vteřinu. Zastaví se u stejný popelnice a čeká, až z ní spadne stejnej pytel.');
+      else t.push('Přes křižovatku přeběhne liška. Jde najisto, jako po vlastní zahradě.');
+      return t;
+    },
+    choices: [{ t: 'Odstoupit od okna.', to: 'p_home' }]
+  };
+
+  // ---------- telefon a notebook ----------
+  N.p_pc = {
+    time: hubTime, mood: dayMood, redirect: dusk,
+    text: function (s) {
+      var t = [];
+      if (s.phoneOff) t.push('Telefon je vypnutej, SIM leží na stole, router taky. Notebook je bez internetu jen těžítko.');
+      else {
+        t.push('Notebook na stole, telefon vedle. Signál plnej, internet jede. Číslo 0314 je online. Je online pořád.');
+        if (s.lostTime && !s.done.triang) t.push('Kamery by šly projít znova, ale spočítat z nich něco pořádnýho už dneska nestihneš.');
+      }
+      t.push(left(s));
+      return t;
+    },
+    choices: [
+      { t: 'Zapnout telefon a router zpátky.', to: 'phoneOn', do: act('phoneOn'), if: function (s) { return s.phoneOff; } },
+      { t: 'Napsat číslu 0314.', to: 'chat', if: online },
+      { t: 'Stáhnout záznamy z kamer a spočítat, kam se všichni dívali.', to: 'triang', do: act('triang'), if: function (s) { return online(s) && !s.done.triang && !s.lostTime; } },
+      { t: 'Najít, co Hrubeš ze čtvrtýho psal na astronomický fórum.', to: 'forum', do: act('forum'), if: function (s) { return online(s) && s.done.mailbox && !s.done.forum; } },
+      { t: 'Chtít po 0314 důkaz: ať ti toho jednoho vrátí na pět minut.', to: 'proofAsk', if: function (s) { var o = offer(s); return online(s) && (o === 'full' || o === 'reduced'); } },
+      { t: 'Napsat 0314, že nabídku bereš. A v noci jít třetí cestou.', to: 'lie', do: act('lie'), if: function (s) { return online(s) && offer(s) !== 'none' && s.knowsWays && !s.lied; } },
+      { t: 'Jinam.', to: 'hub' }
+    ]
+  };
+
+  N.forum = {
+    time: hubTime, mood: 'dread',
+    enter: function (s) { s.knowsPoint = true; },
+    text: [
+      'Fórum astronomický společnosti. Uživatel hrubes_v, 4 812 příspěvků. Jeho poslední vlákno má přes tři sta odpovědí.',
+      'První tejdny si z něj dělaj srandu. Na fotkách nic není, jen jeden přepálenej pixel, ať exponuje jakkoliv krátce. Pak se začnou ozejvat další. Hamburk. Osaka. Někdo z Chile. Všichni to viděj okem, nikdo to nevyfotí.',
+      'Jenže každej to vidí jinde. V Brně nízko nad severovýchodem. V Hamburku na jihovýchodě. V Chile pod obzorem, píše ten člověk, a že ví, jak to zní.',
+      'Hrubeš z těch hlášení počítá paralaxu. Jeho poslední příspěvek má čas 03:11.',
+      '! „Vychází mi vzdálenost v metrech. Ne ve světelných letech, v metrech. Souřadnice: můj obývací pokoj. Výška: můj strop. Někde mám chybu. Jdu se podívat.“',
+      'Pod tím jediná odpověď. 03:13, někdo z Osaky.',
+      '! „I see it now. Everyone here is looking.“',
+      'Hrubešův obývák je přesně nad tvou ložnicí.'
+    ],
+    choices: [{ t: 'Zaklapnout notebook.', to: 'p_pc' }]
+  };
+
+  // ---------- barák ----------
+  N.p_house = {
+    time: hubTime, mood: 'dread', redirect: dusk,
+    text: function (s) {
+      var t = ['Schodiště. V přízemí schránky a dveře do sklepa, v každým patře dvoje dveře. Některý jsou pootevřený.', 'Shora, ze čtvrtýho, se po schodech valí teplej vzduch. Jako z otevřený trouby.'];
+      if (s.hasDog) t.push('Kulich jde s tebou až do třetího patra. Na první schod vejš nešlápne. Lehne si a kňučí.');
+      t.push(left(s));
+      return t;
+    },
+    choices: [
+      { t: 'Schránky v přízemí.', to: 'mailbox', do: act('mailbox'), if: function (s) { return !s.done.mailbox; } },
+      { t: 'Byt naproti přes chodbu. Dveře jsou pootevřený.', to: 'nextdoor', do: act('nextdoor'), if: function (s) { return !s.done.nextdoor; } },
+      { t: 'Sklep. Kóje 7.', to: 'cellar', do: function (s) { s.actions++; s.done.cellar = true; if (s.metNight) s.done.cellar2 = true; }, if: function (s) { return s.metNight ? !s.done.cellar2 : !s.done.cellar; } },
+      { t: 'Sklep, kóje 9. Podle seznamu patří Hrubešovi ze čtvrtýho.', to: 'diary', do: act('diary'), if: function (s) { return s.done.mailbox && !s.done.diary; } },
+      { t: 'Vyrýt ve sklepě nabídku pro toho nočního. Ať se vyjádří.', to: 'carveOffer', do: act('carveOffer'), if: function (s) { return s.metNight && offer(s) !== 'none' && !s.done.carveOffer; } },
+      { t: 'Vzít nabídku. Vyrýt nočnímu, ať se dokouká.', to: 'end_deal', if: function (s) { var o = offer(s); return o === 'full' || o === 'reduced'; } },
+      { t: 'Druhá cesta. Vyrýt nočnímu, ať se dokouká a odejde celej.', to: 'end_alone', if: function (s) { var o = offer(s); return s.knowsWays && (o === 'none' || o === 'bare'); } },
+      { t: 'Čtvrtý patro. Jít nahoru, teď, za světla.', to: 'end_up' },
+      { t: 'Jinam.', to: 'hub' }
+    ]
+  };
+
+  N.mailbox = {
+    time: hubTime, mood: 'dread',
+    text: [
+      'Schránky v přízemí. Z tý tvojí trčej letáky.',
+      'Schránka ze čtvrtýho patra má na štítku strojem: Ing. V. Hrubeš. Dvířka jsou nedovřený. Uvnitř výzva k vyzvednutí balíku z obchodu s optikou a obálka s razítkem astronomický společnosti.',
+      'V obálce je zpravodaj. Jeden článek je zatrženej propiskou: „Hlášení neobvyklého objektu v zenitu. V. Hrubeš, člen od roku 1979.“',
+      'Čteš to ve stoje. Před šesti tejdny si všiml slabýho bodu přímo nad hlavou. Není v žádným katalogu. Nehejbe se s oblohou, celou noc stojí na místě. Prosí kolegy o ověření a dodává, že podrobnosti píše na fórum společnosti.',
+      'Na dveřích do sklepa visí seznam kójí. Hrubeš, 4. patro: kóje 9.',
+      'Bod přímo nad hlavou. Nad jeho hlavou. To je i nad tvojí.'
+    ],
+    choices: [{ t: 'Vrátit zpravodaj do schránky.', to: 'p_house' }]
+  };
+
+  N.nextdoor = {
+    time: hubTime, mood: 'dread',
+    text: function (s) {
+      var t = [
+        'Byt naproti. Mladá rodina, znáte se od vidění. Na botníku klíče, v ložnici dvě rozházený peřiny.',
+        'V dětským pokoji postýlka a nad ní chůvička s kamerou. Bliká na ní, že má plnou paměť. Přetočíš záznam na 03:13.',
+        'Dítě spí na břiše, zadek nahoru. Ve 03:13:51 otevře oči. Nepláče. Postaví se, chytí se šprušlí a zvedne hlavu. Dívá se šikmo nahoru, do rohu stropu. Usměje se.',
+        'Ve 03:14:00 je postýlka prázdná. Peřinka ještě chvíli klesá.',
+        'Nikdo ho nevzbudil. Vzbudilo ho to. A ten roh stropu, kam se dívalo, je směrem k tvýmu bytu. O patro vejš.'
+      ];
+      if (s.found) t.push('Lístek v botě tvrdil, že jsi přežil, protože jsi spal. Tohle dítě spalo taky.');
+      return t;
+    },
+    choices: [{ t: 'Vypnout chůvičku a odejít.', to: 'p_house' }]
+  };
+
+  N.diary = {
+    time: hubTime, mood: 'cellar',
+    text: [
+      'Kóje 9 je zavřená jen na petlici. Uvnitř regály a krabice od banánů, v každý svázaný sešity. Deníky pozorování, rok po roce, od devětasedmdesátýho. Drobný technický písmo, tužkou.',
+      'Poslední sešit leží nahoře. Letošní podzim.',
+      '+ 1. 10. Nový bod v zenitu, asi 6 mag. V katalogu nic. Nehýbe se s oblohou.',
+      '+ 9. 10. V dalekohledu slábne. Pouhým okem sílí. Jako by mu sklo vadilo.',
+      '+ 20. 10. Zkouška, 14 nocí. Když se nedívám, je druhý den slabší. Když o něm napíšu a podívají se další, je jasnější. Roste z toho, že se na něj díváme.',
+      '+ 2. 11. Kolem přibývají další, slabé. Napočítal jsem jich přes dvě stě. Žádný není v katalogu. Každý vypadá přesně jako ten můj před měsícem.',
+      '+ 11. 11. Už ho vidí i lidé, kteří o něm nikdy neslyšeli. Už se nedá nedívat. Pořád myslím na jedno: světlo jde oběma směry. Kdo se dívá, je taky vidět.',
+      'Zaklapneš sešit. Přes dvě stě bodů a každej jako ten jeho před měsícem. Každej z nich byl někdy něčí slabá hvězda přímo nad hlavou.'
+    ],
+    choices: [{ t: 'Vrátit sešit na regál.', to: 'p_house' }]
+  };
+
+  // ---------- ulice ----------
+  N.p_street = {
+    time: hubTime, mood: dayMood, redirect: dusk,
+    text: function (s) {
+      var t = ['Ulice. Ticho, jaký město neumí. Jen motor auta na křižovatce, kterej běží od čtvrt na čtyři ráno.'];
+      t.push('Holubi sedí na všech střechách kromě tý vaší.');
+      if (!s.hasDog) t.push('Na chodníku leží vodítko. Pes, co k němu patří, sedí u vchodu a dívá se na tebe, jako by čekal, až si vzpomeneš.');
+      else t.push('Kulich ti jde u nohy. Na vodítku ne, to nepotřebuje.');
+      t.push(left(s));
+      return t;
+    },
+    choices: [
+      { t: 'To vodítko. A ten pes u vchodu.', to: 'dog', do: act('dog'), if: function (s) { return !s.done.dog; } },
+      { t: 'Auto na křižovatce. Na skle má kameru.', to: 'dashcam', do: act('dashcam'), if: function (s) { return !s.done.dashcam; } },
+      { t: 'Postavit se přes ulici a podívat se na čtvrtý patro.', to: 'outside', do: act('outside'), if: function (s) { return !s.done.outside; } },
+      { t: 'Sednout do auta a ujet. Zjistit, jestli tě to najde i jinde.', to: 'city' },
+      { t: 'Zpátky do baráku.', to: 'hub' }
+    ]
+  };
+
+  N.dog = {
+    time: hubTime, mood: 'day',
+    enter: function (s) { s.hasDog = true; s.animals = true; },
+    text: [
+      'Zvedneš vodítko. Je na něm karabina a kus přetrženýho obojku.',
+      'Pes vyrazí dřív, než se narovnáš. Střapatej voříšek, jedno ucho dolů. Skáče ti do pasu, kňučí, olizuje ruce, točí se dokola. Tak se vítá někdo, kdo se vrátil po roce.',
+      'Nikdy v životě jsi ho neviděl.',
+      'Na známce má vyraženo: Kulich. Sedne si ti na botu a opře se o tebe celou vahou, jako by to dělal odjakživa.',
+      'Pak tě vede. Ke vchodu, po schodech, rovnou ke tvejm dveřím ve třetím patře. Ví, který jsou tvoje. Na schody do čtvrtýho se podívá, stáhne ocas a zalehne.',
+      'Zvířata tu zůstala. A tenhle tě zná. Odněkud, odkud si to ty nepamatuješ.'
+    ],
+    choices: [{ t: 'Pustit ho dovnitř.', to: 'hub' }]
+  };
+
+  N.dashcam = {
+    time: hubTime, mood: 'dread',
+    enter: function (s) { s.knowsPoint = true; },
+    text: [
+      'Auto na křižovatce. Nádrž skoro plná, v rádiu šum. Na čelním skle kamera, nahrává ve smyčce.',
+      'Přetočíš na 03:13. Řidič jede prázdnou ulicí. Ve 03:13:52 sundá nohu z plynu. Auto dojede doprostřed křižovatky a zastaví. On otevře dveře a vystoupí. Nezhasne, nezabrzdí.',
+      'Stojí před kapotou, zády ke kameře, a dívá se šikmo nahoru.',
+      'Kamera zabírá to samý co on. Váš barák. Čtvrtý patro. Jedno okno je na záznamu přepálený do bíla, jako by z něj někdo svítil reflektorem přímo do objektivu. Jedinej bílej bod v celý tmavý ulici.',
+      'Ve 03:14:00 před kapotou nikdo nestojí.',
+      'To okno je přímo nad tvou ložnicí.'
+    ],
+    choices: [{ t: 'Vystoupit z auta.', to: 'p_street' }]
+  };
+
+  N.chat = {
+    time: hubTime, mood: 'dread',
+    text: function (s) {
+      if (s.day === 1) return ['Píšeš. Otázku za otázkou. Tři tečky se objevěj a zase zmizej.', '> Zítra. Jestli si to budeš pamatovat.'];
+      return ['Kurzor bliká v prázdným poli. Číslo 0314 je online. Je online pořád.', 'Na co se zeptáš?'];
+    },
+    choices: [
+      { t: '„Kde jsou všichni?“', to: 'chat_where', if: function (s) { return s.day > 1 && !s.q.where; } },
+      { t: '„Proč zrovna tady? Proč nad mojí postelí?“', to: 'chat_why', if: function (s) { return s.day > 1 && s.knowsPoint && !s.q.why; } },
+      { t: '„Jsi ten bod, co šest tejdnů sledoval Hrubeš?“', to: 'chat_star', if: function (s) { return s.day > 1 && s.done.mailbox && !s.q.star; } },
+      { t: '„Proč tu zůstala zvířata?“', to: 'chat_animals', if: function (s) { return s.day > 1 && s.animals && !s.q.animals; } },
+      { t: '„Kdo mi v noci leze do bytu?“', to: 'chat_who', if: function (s) { return s.day > 1 && (s.sawWetPaint || s.done.doorCheck) && !s.knowsSelf && !s.q.who; } },
+      { t: '„Jaká čtvrtá cesta?“', to: 'chat_fourth', if: function (s) { return s.heardTease && !s.q.fourth; } },
+      { t: '„A co jsi ty? Co z toho máš, když mi radíš?“', to: 'chat_what', if: function (s) { return s.metNight && s.offerDay === null; } },
+      { t: 'Nic. Položit telefon displejem dolů.', to: 'p_pc' }
+    ]
+  };
+  function chatDo(key) { return function (s) { s.q[key] = true; s.actions++; }; }
   N.chat_where = {
-    time: N.chat.time, mood: 'dread', sfx: 'buzz', enter: chatDo('where'),
+    time: hubTime, mood: 'dread', sfx: 'buzz', enter: chatDo('where'),
     text: ['> Tady. Všichni. Nic je nebolí.', '> Chybíš jen ty. A půl.', 'Píšeš: půl čeho? Tři tečky se objevěj a zase zmizej. Třikrát.', '> Zeptej se svých rukou.'],
-    choices: [{ t: 'Dál.', to: 'hub' }]
+    choices: [{ t: 'Dál.', to: 'p_pc' }]
   };
   N.chat_why = {
-    time: N.chat.time, mood: 'dread', sfx: 'buzz', enter: chatDo('why'),
+    time: hubTime, mood: 'dread', sfx: 'buzz', enter: function (s) { chatDo('why')(s); s.knowsLamp = true; },
     text: ['> Nevybíral jsem. Dveře se musí otevřít někde.', '> Každé dveře mají práh. Někdo pod ním vždycky leží. Na každém světě zbude jeden.', 'Na každým světě.', '> Podívej se v noci na hvězdy. Všiml sis, že jich je víc.'],
-    choices: [{ t: 'Dál.', to: 'hub' }]
+    choices: [{ t: 'Dál.', to: 'p_pc' }]
   };
   N.chat_who = {
-    time: N.chat.time, mood: 'dread', sfx: 'buzz', enter: chatDo('who'),
+    time: hubTime, mood: 'dread', sfx: 'buzz', enter: chatDo('who'),
     text: ['> Nikdo k tobě nechodí. Já nemůžu. A nikdo jiný není.', '> Dveře se odemykají zevnitř. Podívej se ráno na své ruce.', 'Podíváš se na ně hned. Nic. Jen pod nehtem malíčku něco bílýho. Jako od barvy.'],
-    choices: [{ t: 'Dál.', to: 'hub' }]
+    choices: [{ t: 'Dál.', to: 'p_pc' }]
   };
   N.chat_fourth = {
-    time: N.chat.time, mood: 'dread', sfx: 'buzz', enter: function (s) { chatDo('fourth')(s); s.knowsFourth = true; },
+    time: hubTime, mood: 'dread', sfx: 'buzz', enter: function (s) { chatDo('fourth')(s); s.knowsFourth = true; },
     text: ['> Když mu jednou předáš řízení dřív, nemusí ti ho vrátit. Den by byl jeho. Ty bys měl tři hodiny ve sklepě.', '> Má to vyryté u podlahy za dekou. Zkoušel to seškrábat. Běž se podívat, jestli mi nevěříš.', '> Já ti to říkám narovinu. On ne. To je rozdíl mezi námi.'],
-    choices: [{ t: 'Dál.', to: 'hub' }]
+    choices: [{ t: 'Dál.', to: 'p_pc' }]
   };
   N.chat_what = {
-    time: N.chat.time, mood: 'dread', sfx: 'buzz',
-    enter: function (s) { s.today.chat = true; s.actions++; s.offerDay = s.day; },
+    time: hubTime, mood: 'dread', sfx: 'buzz',
+    enter: function (s) { s.actions++; s.offerDay = s.day; },
     text: [
       'Odpověď chvíli nejde. Pak přijde celá naráz, bez jediný chyby.',
       '> Jsem to, na co se podívali. Soused je moje ruka. Tohle číslo je můj hlas.',
@@ -799,12 +988,26 @@
       '> Do půlnoci.',
       'Jedna věc ti na tom nesedí. Jestli mu je jedno, kterou cestou odejde, proč mu tolik záleží na tom, abys nešel tou třetí?'
     ],
-    choices: [{ t: 'Dál.', to: 'hub' }]
+    choices: [{ t: 'Dál.', to: 'p_pc' }]
+  };
+  N.chat_star = {
+    time: hubTime, mood: 'dread', sfx: 'buzz', enter: chatDo('star'),
+    text: ['> Bod je to, jak vypadám, když se dívá jeden člověk.', '> Tvůj soused se díval šest týdnů. Každou noc. Byl první a byl nejblíž. Proto mi z něj zbylo nejvíc.', '> Teď se dívá osm miliard. Skoro.'],
+    choices: [{ t: 'Dál.', to: 'p_pc' }]
+  };
+  N.chat_animals = {
+    time: hubTime, mood: 'dread', sfx: 'buzz', enter: chatDo('animals'),
+    text: function (s) {
+      var t = ['> Dívají se taky. Ale nevědí, na co. To se nepočítá.', '> Pohled musí být rozhodnutí. Proto s tebou mluvím, místo abych ti prostě zvedl hlavu.'];
+      if (s.hasDog) t.push('> Ten pes tě má rád. Zná tě déle, než si myslíš.');
+      return t;
+    },
+    choices: [{ t: 'Dál.', to: 'p_pc' }]
   };
 
   N.triang = {
     time: function (s) { return ['Den ' + s.day, '10:15']; }, mood: 'dread',
-    enter: function (s) { s.knowsPoint = true; },
+    enter: function (s) { s.knowsPoint = true; s.knowsLamp = true; },
     text: [
       'Stahuješ poslední snímky před 03:14. Praha, Tokio, New York, Sydney, Reykjavík, Kapský Město. A měříš, kam přesně se kdo dívá.',
       'V Praze k východu, nízko nad obzor. V Tokiu skoro do země, šikmo dolů skrz podlahu nástupiště. V Sydney taky dolů. V Reykjavíku na jihovýchod.',
@@ -814,7 +1017,7 @@
       'Celej svět se ve 03:14 podíval na byt nad tvou postelí. A tys ležel přímo pod tím. Nepřežil jsi, protože jsi spal. Spala půlka Evropy a zmizela taky. Přežil jsi, protože jsi byl moc blízko. Jako člověk, co stojí pod lampou.',
       '> Už víš kde. Tak se zeptej proč tady.'
     ],
-    choices: [{ t: 'Dál.', to: 'hub' }]
+    choices: [{ t: 'Dál.', to: 'p_pc' }]
   };
 
   N.mirrorwall = {
@@ -840,7 +1043,7 @@
       t.push('Zeď za zrcadlem je spálená. Co sem vyryješ, to někdo čte a zatírá. Čárky ale nechává. Chce, abys věděl, kolikátej pokus to je. Jen ne, co ses naučil.');
       return t;
     },
-    choices: [{ t: 'Dál.', to: 'hub' }]
+    choices: [{ t: 'Dál.', to: 'p_home' }]
   };
 
   N.carveDesk = {
@@ -858,17 +1061,18 @@
       t.push('Dřevo drží líp než omítka. Tohle tu zůstane. I kdyby se všechno ostatní vrátilo.');
       return t;
     },
-    choices: [{ t: 'Dál.', to: 'hub' }]
+    choices: [{ t: 'Dál.', to: 'p_home' }]
   };
 
   N.doorCheck = {
     time: function (s) { return ['Den ' + s.day, '08:00']; }, mood: 'dread',
+    enter: function (s) { s.sawLock = true; },
     text: [
       'Klečíš u zámku s lupou z šuplíku. Žádný škrábance, žádný stopy po šperháku. Klíč je v zámku zevnitř, pootočenej.',
       'Nikdo se sem nedobýval. Někdo odemkl z bytu a nechal odemčeno. Jako když jdeš jen na skok dolů a hned se vracíš.',
       'V komoře stojí poloprázdná plechovka bílý barvy a štětec. Štětec je vlhkej. Nepamatuješ si, že bys ji kdy otevřel.'
     ],
-    choices: [{ t: 'Dál.', to: 'hub' }]
+    choices: [{ t: 'Dál.', to: 'p_home' }]
   };
 
   N.trap = {
@@ -880,7 +1084,7 @@
       'Potřebuješ past, co reset přežije. Vezmeš propisku, rozlomíš náplň a inkoustem natřeš kliku z obou stran, rám zrcadla a víko plechovky s barvou.',
       'Inkoust z ruky je skoro rukopis. Uvidíme.'
     ],
-    choices: [{ t: 'Dál.', to: 'hub' }]
+    choices: [{ t: 'Dál.', to: 'p_home' }]
   };
 
   N.outside = {
@@ -893,7 +1097,7 @@
     ],
     choices: [
       { t: 'Přiblížit. Je to jen displej. Displej není pohled.', to: 'end_screen' },
-      { t: 'Sklopit telefon. Hned.', to: 'hub' }
+      { t: 'Sklopit telefon. Hned.', to: 'p_street' }
     ]
   };
 
@@ -905,7 +1109,7 @@
       'Trvá to do oběda. Ruka tě bolí až do ramene.',
       'Jestli se k tomu má někdo vyjádřit, tak ten, koho se to týká nejvíc.'
     ],
-    choices: [{ t: 'Zpátky nahoru.', to: 'hub' }]
+    choices: [{ t: 'Zpátky nahoru.', to: 'p_house' }]
   };
 
   N.proofAsk = {
@@ -935,7 +1139,7 @@
       'Nic dalšího. Žádná otázka, žádná podmínka.',
       'Položíš telefon a snažíš se myslet na cokoliv jinýho než na schody ve 03:10. Jde to blbě. Zkus nemyslet na bílýho medvěda.'
     ],
-    choices: [{ t: 'Dál.', to: 'hub' }]
+    choices: [{ t: 'Dál.', to: 'p_pc' }]
   };
 
   // =====================================================================
@@ -956,10 +1160,12 @@
         t.push('Ležíš v posteli. Chceš se posadit. Nejde to. Chceš pohnout prstem. Nic.');
         t.push('Pak se posadíš. Jenže ne ty. Tělo vstane samo, klidně, jako po tisící. Jsi v něm jen spolujezdec.');
         t.push('Jde do komory, vezme barvu, zatře zeď za zrcadlem. Pak odemkne dveře a jde po schodech dolů. Potmě, bez zaváhání. Sklep. Kóje 7.');
+        if (s.hasDog) t.push('Na dece už leží Kulich. Zvedne hlavu a zavrtí ocasem. Tělo ho podrbe za uchem, tak samozřejmě, jak se to dělá po sté.');
         t.push('Tělo si sedne na deku, zapálí svíčku a řekne nahlas, tvým hlasem, do prázdna:');
         t.push('! „Vím, že tam dneska jsi. Cítím, jak se díváš. Tak poslouchej, v 06:47 mě zase vypneš.“');
         t.push('! „Já jsem ten z pokusu 3. Byl jsem vzhůru a podíval jsem se. Napůl. Pak jsem uhnul. Půlka mě je od tý doby tam nahoře a půlka tady, tři a půl hodiny denně. Zbytek dne patříš sobě a nepamatuješ si nic.“');
         t.push('! „Zatírám ti vzkazy, protože ono je čte přes tvoje oči. Čím víc víš ve dne, tím víc ví ono. Čárky nechávám, abys nezešílel.“');
+        if (s.hasDog) t.push('! „Kulich za mnou chodí každou noc, přes rok. Je jedinej, kdo zná nás oba.“');
         t.push('! „Slyším tě, když myslíš nahlas. Máš jednu, možná dvě otázky, než se rozední. Vyber dobře.“');
       } else {
         t.push('Světlo zhasne. Tělo vstane bez tebe. Schody, sklep, kóje 7, svíčka.');
@@ -1129,6 +1335,7 @@
       t.push('Budí tě hluk. Auta. Soused s vrtačkou. Někdo na ulici nadává, že mu kdosi nechal auto uprostřed křižovatky.');
       t.push('Byt není prázdnej. Z vedlejšího pokoje slyšíš dýchání a pak ty nejobyčejnější ranní zvuky na světě. Chvíli jen ležíš a posloucháš je.');
       t.push('Zprávy jsou plný jediný věci: celá planeta má tříhodinový okno, na který si nikdo nepamatuje. Do tejdne to přebije fotbal.');
+      if (s.hasDog) t.push('Na chodníku někdo venčí střapatýho voříška s jedním uchem dolů. Pes se u vašeho vchodu zastaví, podívá se nahoru do tvýho okna a zavrtí ocasem. Pak se nechá odtáhnout.');
       t.push('Odpoledne sejdeš do sklepa. Kóje 7 je prázdná. Stěny holý. Až na jedno místo u podlahy:');
       t.push('# ' + (s.fortyTwo ? '42. ' : '') + 'NEUDĚLAL JSEM TO.');
       t.push('Tu noc se ve 03:14 vzbudíš sám od sebe. Venku normální tma, normální lampy. Nahoře nic neteče. Usínáš skoro hned. Jen si předtím všimneš, že spíš celej. Poprvý po víc než roce.');
@@ -1314,5 +1521,68 @@
     ]
   });
 
-  root.STORY = { N: N, ENDINGS: ENDINGS, newState: newState, START: 'start' };
+  // =====================================================================
+  //  CO VÍM: stopy se odvozují ze stavu, nic se neukládá zvlášť
+  // =====================================================================
+  var QUESTIONS = [
+    ['q1', 'Co se stalo ve 03:14?'],
+    ['q2', 'Proč jsem tu zůstal já?'],
+    ['q3', 'Co je to nahoře?'],
+    ['q4', 'Proč se ten den opakuje?'],
+    ['q5', 'Kdo chodí do mého bytu a kdo píše lístky?'],
+    ['q6', 'Jak to skončit?']
+  ];
+  var CLUES = [
+    { id: 'cams', q: 'q1', has: function (s) { return s.sawCams; }, t: 'Všichni zmizeli ve stejnou vteřinu. Na posledním snímku se dívají stejným směrem.' },
+    { id: 'baby', q: 'q1', has: function (s) { return s.done.nextdoor; }, t: 'Podívali se i ti, co spali. Něco je vzbudilo.' },
+    { id: 'point', q: 'q1', has: function (s) { return s.knowsPoint; }, t: 'Nedívali se do nebe. Dívali se na jedno místo: byt ve čtvrtém patře, přímo nad mou postelí.' },
+
+    { id: 'slept', q: 'q2', has: function (s) { return s.found; }, t: function (s) { return 'Lístek z boty tvrdí, že proto, že jsem spal.' + (s.done.nextdoor || s.knowsLamp ? ' To nesedí. Spali i jiní.' : ''); } },
+    { id: 'lamp', q: 'q2', has: function (s) { return s.knowsLamp; }, t: 'Ležel jsem přímo pod tím. Pod prahem, ve slepém úhlu. Jako člověk pod lampou.' },
+    { id: 'follow', q: 'q2', has: function (s) { return s.wasAway; }, t: 'Není to nad barákem. Je to nade mnou. Jde to se mnou.' },
+
+    { id: 'consent', q: 'q3', has: function (s) { return s.found || s.waited || s.knowsWays; }, t: 'Do bytu to nemůže a nic mi neudělá. Potřebuje, abych se podíval sám a dobrovolně.' },
+    { id: 'star', q: 'q3', has: function (s) { return s.done.mailbox; }, t: 'Soused Hrubeš je astronom. Šest týdnů sledoval nový bod přímo nad barákem.' },
+    { id: 'parallax', q: 'q3', has: function (s) { return s.done.forum; }, t: 'Nebylo to na obloze. Podle jeho výpočtu to viselo pár metrů od něj, u stropu. Na fotkách jen přepálený bod.' },
+    { id: 'grows', q: 'q3', has: function (s) { return s.done.diary; }, t: 'Sílí to, když se na to někdo dívá. Čím víc lidí, tím víc. Bez pohledu slábne.' },
+    { id: 'worlds', q: 'q3', has: function (s) { return s.done.diary || s.q.why; }, t: 'Na obloze přibyly stovky stejných bodů. Každý z nich je nejspíš jeden hotový svět.' },
+    { id: 'voice', q: 'q3', has: function (s) { return s.q.pc || s.offerDay !== null; }, t: 'Číslo 0314 je jeho hlas, soused jeho ruka. Skoro nelže. Řekne pravdu, když se mu hodí.' },
+    { id: 'choice', q: 'q3', has: function (s) { return s.q.animals; }, t: 'Zvířata se dívají taky, ale nevědí na co. To se nepočítá. Musí to být rozhodnutí.' },
+
+    { id: 'loop', q: 'q4', has: function (s) { return s.knowsLoop; }, t: 'Nejsem tu poprvé. Z bloku chybí stránky a nepamatuju si, že bych je psal.' },
+    { id: 'reset', q: 'q4', has: function (s) { return s.found; }, t: 'Ve 03:14 se všechno vrátí. Zůstane jen to, co je psané rukou nebo vyryté.' },
+    { id: 'animals', q: 'q4', has: function (s) { return s.animals; }, t: 'Zvířata si pamatují. Žijí ten samý den už dlouho a znají ho nazpaměť.' },
+    { id: 'decide', q: 'q4', has: function (s) { return s.nights >= 1; }, t: 'Kdo ve 03:14 nespí a nepodívá se, ten si pamatuje.' },
+    { id: 'tally', q: 'q4', has: function (s) { return s.done.cellar; }, t: 'V kóji 7 je přes čtyři sta čárek. Dvakrát už jsem šel nahoru.' },
+    { id: 'half', q: 'q4', has: function (s) { return s.metNight; }, t: 'Kdysi jsem se podíval napůl a uhnul. Tím se zasekly dveře. Ta smyčka je moje, ne jeho.' },
+
+    { id: 'inside', q: 'q5', has: function (s) { return s.sawLock; }, t: 'Dveře jsou každé ráno odemčené zevnitř.' },
+    { id: 'seven', q: 'q5', has: function (s) { return s.knowsSeven; }, t: 'Od pokusu 8 píšu sedmičku bez čárky. Lístek s čárkou není ode mě.' },
+    { id: 'hand', q: 'q5', has: function (s) { return s.sawHand || s.q.pc; }, t: 'Lístky pod dveře strká soused. Mým písmem, s hlavou zvrácenou ke stropu.' },
+    { id: 'self', q: 'q5', has: function (s) { return s.knowsSelf; }, t: 'Vstávám já. Mezi 03:14 a 06:47 zatírám vlastní vzkazy a nevím o tom.' },
+    { id: 'reads', q: 'q5', has: function (s) { return s.metNight; }, t: 'Zatírá je, protože ono čte všechno, co čtu já.' },
+
+    { id: 'mirror', q: 'q6', has: function (s) { return s.done.scrape; }, t: 'Zrcadlo ve 03:14 nepomůže. Už jsem to zkusil.' },
+    { id: 'daydoor', q: 'q6', has: function (s) { return s.q.pa; }, t: 'Ve dne nahoře žádné dveře nejsou, jen jeho ruka. Dveře tam jsou jednu minutu, ve 03:14.' },
+    { id: 'ways', q: 'q6', has: function (s) { return s.knowsWays; }, t: 'Tři cesty. Podívat se. Nechat nočního dokoukat a zůstat sám. Nebo stát ve 03:14 v tom bodě se zavřenýma očima, zatímco se on podívá ven.' },
+    { id: 'fourth', q: 'q6', has: function (s) { return s.knowsFourth && (s.metNight || s.q.fourth); }, t: 'Čtvrtá cesta: když mu předám řízení, nemusí mi ho vrátit.' },
+    { id: 'offer', q: 'q6', has: function (s) { return s.offerDay !== null; }, t: 'Nabídka: nechat nočního dokoukat, výměnou za jednoho člověka. Čím déle čekám, tím je menší.' },
+    { id: 'fear', q: 'q6', has: function (s) { return s.fortyTwo; }, t: 'Stovky dní nenabízelo nic. Teď nabízí. Bojí se třetí cesty.' },
+    { id: 'seen', q: 'q6', has: function (s) { return s.done.diary; }, t: 'Hrubeš si zapsal: světlo jde oběma směry. Kdo se dívá, je taky vidět.' }
+  ];
+  function clueText(c, s) { return typeof c.t === 'function' ? c.t(s) : c.t; }
+  function clueIds(s) { return CLUES.filter(function (c) { return !!c.has(s); }).map(function (c) { return c.id; }); }
+  function notebook(s) {
+    var found = 0;
+    var groups = QUESTIONS.map(function (q) {
+      var mine = CLUES.filter(function (c) { return c.q === q[0]; });
+      var have = mine.filter(function (c) { return !!c.has(s); });
+      found += have.length;
+      return { title: q[1], items: have.map(function (c) { return clueText(c, s); }), missing: mine.length - have.length };
+    });
+    return { found: found, total: CLUES.length, groups: groups };
+  }
+  function clueById(id, s) { var c = CLUES.filter(function (x) { return x.id === id; })[0]; return c ? clueText(c, s) : ''; }
+
+  root.STORY = { N: N, ENDINGS: ENDINGS, newState: newState, START: 'start', clueIds: clueIds, clueById: clueById, notebook: notebook };
 })(typeof window !== 'undefined' ? window : globalThis);

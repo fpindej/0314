@@ -26,19 +26,20 @@
     <button id="openGallery" type="button">Konce</button>
     <button id="soundTitle" type="button">Zvuk: zapnutý</button>
   </nav>
-  <p class="hint">Hraje se čtením a volbami. Hudba se skládá sama podle toho, co se děje, nejlíp zní ve sluchátkách.</p>
+  <p class="hint">Čteš, rozhlížíš se a volíš. Co zjistíš, najdeš pod „Co vím“. Hudba se skládá sama podle toho, co se děje, nejlíp zní ve sluchátkách.</p>
 </main>
 
 <div id="game" hidden>
   <header class="bar">
-    <button id="home" type="button" class="quiet">Úvod</button>
+    <button id="notesBtn" type="button" class="quiet">Co vím</button>
     <span id="day" class="day"></span>
     <span id="clock" class="clock small"></span>
     <button id="soundGame" type="button" class="quiet" aria-pressed="true">Zvuk</button>
   </header>
-  <main class="page">
+  <main class="page" id="page">
     <article id="story" aria-live="polite"></article>
     <ol id="choices" class="choices"></ol>
+    <p id="skip" class="skip" hidden>Klepni kamkoliv a text se ukáže celý.</p>
     <section id="end" class="end" hidden>
       <p id="endKind" class="kind"></p>
       <h2 id="endTitle"></h2>
@@ -51,6 +52,16 @@
     </section>
   </main>
 </div>
+
+<main id="notes" hidden>
+  <h2>Co vím</h2>
+  <p id="notesCount" class="lede"></p>
+  <div id="notesList" class="sheet"></div>
+  <div class="row">
+    <button id="notesBack" type="button">Zpět do hry</button>
+    <button id="notesHome" type="button" class="quiet">Odejít na úvod</button>
+  </div>
+</main>
 
 <main id="gallery" hidden>
   <h2>Konce</h2>

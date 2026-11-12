@@ -9,6 +9,7 @@
   --amber-dim: #3a2c18;
   --paper: #e9e3cf;
   --ink: #2b3c96;
+  --ink-light: #9db1f2;
   --light: #edece5;
 
   --bg: var(--night);
@@ -49,7 +50,8 @@ button:focus-visible { outline: 2px solid var(--seg-on); outline-offset: 3px; }
 @keyframes blink { 50% { opacity: .15; } }
 
 /* ---------- úvod ---------- */
-#title, #gallery { max-width: 34rem; margin: 0 auto; padding: 12vh 1.5rem 3rem; }
+#title, #gallery, #notes { max-width: 34rem; margin: 0 auto; padding: 12vh 1.5rem 3rem; }
+#notes { padding-top: 6vh; }
 #title { min-height: 100dvh; display: flex; flex-direction: column; }
 .hero { margin-bottom: 3rem; }
 .lede { margin: 1.75rem 0 0; font-size: 1.3rem; line-height: 1.45; max-width: 24rem; }
@@ -130,6 +132,35 @@ body[data-bleach="2"] .ln.carve, body[data-bleach="3"] .ln.carve { background-co
 .choices button { display: grid; grid-template-columns: 1.9rem 1fr; gap: .25rem; width: 100%; padding: .9rem 0; line-height: 1.4; }
 .choices .key { color: var(--seg-on); font-weight: 600; }
 .choices button:hover .lbl, .choices button:active .lbl { color: var(--seg-on); }
+/* jediná možnost: žádné písmeno, jen pokračování */
+.choices.solo { border-top: 0; margin-top: 1.5rem; }
+.choices.solo li { border-bottom: 0; }
+.choices.solo button { display: inline-block; width: auto; padding: .55rem 0; color: var(--seg-on); border-bottom: 1px solid currentColor; }
+.skip { position: fixed; left: 0; right: 0; bottom: max(1rem, env(safe-area-inset-bottom)); margin: 0; text-align: center; color: var(--muted); font-size: .95rem; pointer-events: none; }
+
+/* nová stopa: poznámka na okraj, propiskou */
+.ln.gain { margin-top: 1.6em; padding-left: 1.1rem; border-left: 2px solid var(--ink-light); font-family: var(--hand); font-size: 1.4rem; line-height: 1.2; color: var(--ink-light); }
+.ln.gain .tag { display: block; font-family: var(--serif); font-size: .85rem; color: var(--muted); margin-bottom: .15rem; }
+.ln.gain + .ln.gain { margin-top: .6em; }
+body[data-bleach="2"] .ln.gain, body[data-bleach="3"] .ln.gain { color: var(--ink); border-color: var(--ink); }
+
+/* cizí deník: tužka, rovně, bez vytržení */
+.ln.diary { background: #e4e0d2; color: #33363b; font-family: var(--hand); font-size: 1.4rem; line-height: 1.15; padding: .6rem 1rem .65rem; margin: 0 0 2px; max-width: 94%; border-left: 3px solid #b9484a; }
+.ln.diary + .ln:not(.diary) { margin-top: 1.4em; }
+
+/* tlačítko Co vím a tečka u nové stopy */
+#notesBtn { position: relative; }
+#notesBtn.fresh { color: var(--fg); }
+#notesBtn.fresh::after { content: ''; position: absolute; top: .35rem; right: -.65rem; width: .45rem; height: .45rem; border-radius: 50%; background: var(--seg-on); }
+
+/* Co vím: list papíru */
+#notes h2 { font-size: 2.3rem; margin: 0; font-weight: 600; }
+#notes .lede { font-size: 1.1rem; color: var(--muted); margin-top: .5rem; max-width: none; }
+.sheet { background: var(--paper); color: #23262b; margin: 1.75rem -.5rem 2rem; padding: 1.4rem 1.25rem 1.6rem; box-shadow: 0 8px 24px rgba(0, 0, 0, .4); }
+.sheet section + section { margin-top: 1.5rem; padding-top: 1.2rem; border-top: 1px solid rgba(43, 60, 150, .22); }
+.sheet h3 { margin: 0 0 .5rem; font-size: 1.15rem; font-weight: 600; line-height: 1.3; }
+.sheet .clue { margin: 0 0 .5rem; font-family: var(--hand); font-size: 1.45rem; line-height: 1.15; color: var(--ink); }
+.sheet .missing { margin: .3rem 0 0; font-size: .95rem; font-style: italic; color: #6b6a63; }
 
 /* ---------- konec ---------- */
 .end { margin-top: 3rem; padding-top: 1.5rem; border-top: 3px double var(--rule); }

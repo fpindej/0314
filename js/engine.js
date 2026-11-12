@@ -47,17 +47,19 @@
     var view = {
       id: id,
       time: val(node.time, s, P) || ['', ''],
-      mood: node.mood || 'day',
+      mood: val(node.mood, s, P) || 'day',
       sfx: val(node.sfx, s, P) || null,
       bleach: node.bleach || 0,
       lines: lines,
       choices: this._choices.map(function (c) { return c.t; }),
-      end: null
+      end: null,
+      newClues: []
     };
     if (node.end) {
       var e = ST.ENDINGS[node.end];
       P.ends[node.end] = true; P.runs = (P.runs || 0) + 1;
-      view.end = { id: node.end, t: e.t, k: e.k };
+      var nb = ST.notebook(s);
+      view.end = { id: node.end, t: e.t, k: e.k, clues: nb.found, cluesTotal: nb.total };
       this.store.set('save', null);
     } else {
       this.store.set('save', { id: id, s: pre });
@@ -69,8 +71,11 @@
   Engine.prototype.choose = function (i) {
     var c = this._choices[i];
     if (!c) throw new Error('Neplatná volba ' + i + ' v ' + this.id);
+    var before = ST.clueIds(this.s), s = this.s;
     if (c.do) c.do(this.s, this.P);
-    return this.go(val(c.to, this.s, this.P));
+    var view = this.go(val(c.to, this.s, this.P));
+    view.newClues = ST.clueIds(s).filter(function (id) { return before.indexOf(id) < 0; }).map(function (id) { return ST.clueById(id, s); });
+    return view;
   };
 
   Engine.prototype.endings = function () {
@@ -79,6 +84,8 @@
       return { id: k, t: ST.ENDINGS[k].t, k: ST.ENDINGS[k].k, found: !!P.ends[k] };
     });
   };
+
+  Engine.prototype.notebook = function () { return this.s ? ST.notebook(this.s) : null; };
 
   Engine.prototype.wipe = function () {
     this.P = { runs: 0, carv: {}, ends: {} };

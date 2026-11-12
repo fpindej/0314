@@ -9,7 +9,8 @@ function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 42949
 
 const N = STORY.N, visited = new Set(), ends = {}, problems = [];
 const RUNS = 60000;
-let longest = 0, bad = /[—–]/;
+let longest = 0, maxClues = 0, bestGood = 0, bad = /[\u2014\u2013]/;
+const clueSeen = new Set();
 
 for (let r = 0; r < RUNS; r++) {
   const store = memStore();
@@ -23,7 +24,8 @@ for (let r = 0; r < RUNS; r++) {
     visited.add(v.id);
     if (!v.lines.length) problems.push('prázdný text: ' + v.id);
     v.lines.forEach(l => { if (typeof l !== 'string') problems.push('ne-text v ' + v.id); else if (bad.test(l)) problems.push('pomlčka v ' + v.id); else if (/undefined|NaN|\[object/.test(l)) problems.push('rozbitý text v ' + v.id + ': ' + l); });
-    if (v.end) { ends[v.end.id] = (ends[v.end.id] || 0) + 1; break; }
+    (v.newClues || []).forEach(c => { if (!c) problems.push('prázdná stopa v ' + v.id); else clueSeen.add(c.slice(0, 40)); });
+    if (v.end) { ends[v.end.id] = (ends[v.end.id] || 0) + 1; maxClues = Math.max(maxClues, v.end.clues); if (v.end.id === 'good') bestGood = Math.max(bestGood, v.end.clues); break; }
     if (!v.choices.length) { problems.push('slepý uzel: ' + v.id); break; }
     if (++steps > 400) { problems.push('nekonečný běh, poslední uzel: ' + v.id); break; }
     let i = Math.floor(rnd() * v.choices.length);
@@ -52,6 +54,9 @@ Object.keys(N).forEach(k => { const c = N[k].choices; if (Array.isArray(c)) c.fo
 
 console.log('uzlů:', Object.keys(N).length, '| navštíveno:', visited.size, '| nejdelší běh:', longest, 'kroků');
 console.log('konce:', JSON.stringify(ends));
+const total = STORY.notebook(STORY.newState()).total;
+console.log('stop celkem:', total, '| různých stop nalezeno:', clueSeen.size, '| nejvíc v jednom běhu:', maxClues, '| nejvíc u dobrého konce:', bestGood);
+if (clueSeen.size < total) problems.push('některé stopy se nedají najít: ' + clueSeen.size + ' z ' + total);
 console.log('nedosažené uzly:', unreached.join(', ') || 'žádné');
 console.log('nedosažené konce:', missingEnds.join(', ') || 'žádné');
 const uniq = [...new Set(problems)];

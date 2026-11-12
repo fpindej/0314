@@ -6,7 +6,8 @@ Interaktivní textový horor v prohlížeči. Probudíš se a všichni jsou pry�
 
 ## O hře
 
-- Čteš a volíš. 14 konců, jeden dobrý.
+- Čteš, rozhlížíš se a volíš. 14 konců, jeden dobrý.
+- Byt, barák, ulice, telefon: přesuny jsou zadarmo, každá pořádná věc stojí kus dne. Co zjistíš, se skládá pod „Co vím“ do šesti otázek a 31 stop.
 - Hra si pamatuje mezi pokusy jen to, co je psané rukou nebo vyryté. Přesně jako ty.
 - Hudba a zvuky se syntetizují za běhu přes Web Audio podle toho, co se zrovna děje. Žádné zvukové soubory. Nejlíp ve sluchátkách.
 - Postup se ukládá do prohlížeče (localStorage). Klávesy A až J vybírají volby, mezerník přeskočí odkrývání textu.
