@@ -1,0 +1,160 @@
+/* 03:14. Byt v noci bez proudu: modročerná tma, omítka, jantarový displej trouby, modrá propiska.
+   Jediný výrazný tah: ve 03:14 stránka vybledne do světla (data-bleach 1 až 3). */
+:root {
+  --night: #12161d;
+  --wall: #1b2029;
+  --plaster: #cfcabd;
+  --dust: #8b8a84;
+  --amber: #f2a23a;
+  --amber-dim: #3a2c18;
+  --paper: #e9e3cf;
+  --ink: #2b3c96;
+  --light: #edece5;
+
+  --bg: var(--night);
+  --fg: var(--plaster);
+  --muted: var(--dust);
+  --rule: #2a313d;
+  --seg-on: var(--amber);
+  --seg-off: #1e232c;
+
+  --serif: 'Newsreader', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --hand: 'Caveat', 'Bradley Hand', 'Segoe Print', cursive;
+}
+body[data-bleach="1"] { --bg: #232a35; --rule: #3a4350; --seg-off: #2b323d; }
+body[data-bleach="2"] { --bg: #8e9299; --fg: #14171c; --muted: #2f3339; --rule: #6f747c; --seg-on: #14171c; --seg-off: #84888f; }
+body[data-bleach="3"] { --bg: var(--light); --fg: #17191d; --muted: #55585e; --rule: #c9c7bd; --seg-on: #17191d; --seg-off: #dedcd3; }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100vh; min-height: 100dvh;
+  background: var(--bg); color: var(--fg);
+  font-family: var(--serif); font-size: 1.1875rem; line-height: 1.62;
+  transition: background-color 2.8s ease, color 2.8s ease;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+button:focus-visible { outline: 2px solid var(--seg-on); outline-offset: 3px; }
+[hidden] { display: none !important; }
+
+/* ---------- hodiny ---------- */
+.clock svg { display: block; height: 100%; width: auto; }
+.clock .on { fill: var(--seg-on); transition: fill 2.8s ease; }
+.clock .off { fill: var(--seg-off); transition: fill 2.8s ease; }
+.clock .colon rect { fill: var(--seg-on); transition: fill 2.8s ease; }
+.clock.big { height: clamp(5rem, 26vw, 11rem); margin: 0; filter: drop-shadow(0 0 22px rgba(242, 162, 58, .35)); }
+.clock.big .colon { animation: blink 2s steps(1) infinite; }
+.clock.small { height: 1.5rem; }
+.clock.small.zero .colon { animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: .15; } }
+
+/* ---------- úvod ---------- */
+#title, #gallery { max-width: 34rem; margin: 0 auto; padding: 12vh 1.5rem 3rem; }
+#title { min-height: 100dvh; display: flex; flex-direction: column; }
+.hero { margin-bottom: 3rem; }
+.lede { margin: 1.75rem 0 0; font-size: 1.3rem; line-height: 1.45; max-width: 24rem; }
+.attempt { margin: .75rem 0 0; color: var(--muted); font-style: italic; min-height: 1.6em; }
+.menu { display: flex; flex-direction: column; border-top: 1px solid var(--rule); }
+.menu button { padding: .95rem 0; border-bottom: 1px solid var(--rule); font-size: 1.25rem; }
+.menu button:hover { color: var(--amber); }
+.menu #new, .menu #continue { font-weight: 600; }
+.hint { margin-top: auto; padding-top: 2.5rem; color: var(--muted); font-size: 1rem; line-height: 1.5; max-width: 26rem; }
+
+/* ---------- hra ---------- */
+.bar {
+  position: sticky; top: 0; z-index: 5;
+  display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 1rem;
+  padding: .7rem 1.25rem; padding-top: max(.7rem, env(safe-area-inset-top));
+  background: var(--bg); border-bottom: 1px solid var(--rule);
+  transition: background-color 2.8s ease, border-color 2.8s ease;
+}
+.bar .day { justify-self: end; color: var(--muted); font-size: 1rem; }
+.quiet { color: var(--muted); font-size: 1rem; padding: .35rem 0; }
+.quiet:hover { color: var(--fg); }
+.page { max-width: 34rem; margin: 0 auto; padding: 1.75rem 1.5rem 5rem; }
+
+.ln { margin: 0 0 1.05em; opacity: 0; transform: translateY(.3rem); transition: opacity .7s ease, transform .7s ease; }
+.ln.in { opacity: 1; transform: none; }
+.ln strong { font-weight: 600; }
+
+/* hlas: kurzíva odsazená jako přímá řeč */
+.ln.voice { font-style: italic; padding-left: 1.1rem; border-left: 2px solid var(--rule); }
+
+/* zpráva z čísla 0314: bublina displeje */
+.ln.sms {
+  position: relative; max-width: 88%; padding: .7rem .95rem .75rem; margin-top: 1.5em;
+  background: var(--wall); border-radius: 1.1rem 1.1rem 1.1rem .3rem;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 1.02rem; line-height: 1.45;
+}
+.ln.sms .from { position: absolute; top: -1.35em; left: .2rem; font-size: .8rem; color: var(--amber); letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.ln.sms + .ln.sms { margin-top: -.5em; }
+.ln.sms + .ln.sms .from { display: none; }
+body[data-bleach="2"] .ln.sms, body[data-bleach="3"] .ln.sms { background: rgba(0, 0, 0, .1); }
+body[data-bleach="2"] .ln.sms .from, body[data-bleach="3"] .ln.sms .from { color: inherit; }
+
+/* lístek: vytržená stránka z bloku, modrá propiska */
+.ln.note {
+  background: var(--paper); color: var(--ink);
+  background-image: repeating-linear-gradient(transparent 0 1.62em, rgba(43, 60, 150, .16) 1.62em calc(1.62em + 1px));
+  background-position: 0 .55rem;
+  font-family: var(--hand); font-size: 1.5rem; line-height: 1.08;
+  padding: .9rem 1.1rem 1rem; margin: 1.4em 0 1.5em -.25rem; max-width: 92%;
+  transform: rotate(-1.1deg) translateY(.3rem);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 96% 98.6%, 90% 100%, 82% 98.4%, 73% 100%, 64% 98.8%, 55% 100%, 44% 98.5%, 35% 100%, 26% 98.7%, 16% 100%, 8% 98.6%, 0 100%);
+}
+.ln.note.in { transform: rotate(-1.1deg); }
+.ln.note:nth-of-type(even) { transform: rotate(.8deg) translateY(.3rem); }
+.ln.note:nth-of-type(even).in { transform: rotate(.8deg); }
+
+/* vyryto do omítky */
+.ln.carve {
+  background: #2b2f37; color: #bdb9ad;
+  padding: .85rem 1rem; margin: 1.3em 0;
+  font-family: var(--hand); font-weight: 500; font-size: 1.35rem; line-height: 1.25; letter-spacing: .09em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .7);
+  background-image: radial-gradient(rgba(255, 255, 255, .035) 1px, transparent 1.2px); background-size: 7px 7px;
+}
+body[data-bleach="2"] .ln.carve, body[data-bleach="3"] .ln.carve { background-color: #3a3e46; }
+
+/* časová značka uvnitř scény */
+.ln.stamp { height: 1.7rem; margin: 2em 0 1em; }
+.ln.stamp svg { height: 100%; width: auto; display: block; }
+.ln.stamp .on, .ln.stamp .colon rect { fill: var(--seg-on); }
+.ln.stamp .off { fill: var(--seg-off); }
+
+/* ---------- volby ---------- */
+.choices { list-style: none; margin: 2.25rem 0 0; padding: 0; border-top: 1px solid var(--rule); transition: opacity .6s ease; }
+.choices.pending { opacity: 0; }
+.choices li { border-bottom: 1px solid var(--rule); }
+.choices button { display: grid; grid-template-columns: 1.9rem 1fr; gap: .25rem; width: 100%; padding: .9rem 0; line-height: 1.4; }
+.choices .key { color: var(--seg-on); font-weight: 600; }
+.choices button:hover .lbl, .choices button:active .lbl { color: var(--seg-on); }
+
+/* ---------- konec ---------- */
+.end { margin-top: 3rem; padding-top: 1.5rem; border-top: 3px double var(--rule); }
+.end .kind { margin: 0; color: var(--muted); }
+.end h2 { margin: .1rem 0 .4rem; font-size: 2.3rem; line-height: 1.1; font-weight: 600; }
+.end[data-kind="good"] h2 { color: var(--amber); }
+.end .count { margin: 0 0 1.5rem; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: .5rem 1.75rem; }
+.row button { padding: .6rem 0; border-bottom: 1px solid currentColor; }
+.row button:hover { color: var(--amber); }
+
+/* ---------- seznam konců ---------- */
+#gallery h2 { font-size: 2.3rem; margin: 0; font-weight: 600; }
+.endlist { list-style: none; padding: 0; margin: 2rem 0; border-top: 1px solid var(--rule); }
+.endlist li { display: flex; justify-content: space-between; gap: 1rem; padding: .7rem 0; border-bottom: 1px solid var(--rule); }
+.endlist .k { color: var(--muted); font-size: 1rem; white-space: nowrap; }
+.endlist .locked .t { color: var(--muted); font-style: italic; }
+.endlist .good .t { color: var(--amber); }
+
+@media (min-width: 48rem) {
+  body { font-size: 1.3rem; }
+  .page { padding-top: 3rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body, .bar, .clock .on, .clock .off { transition: none; }
+  .ln { transition: none; transform: none; }
+  .clock .colon { animation: none !important; }
+}
